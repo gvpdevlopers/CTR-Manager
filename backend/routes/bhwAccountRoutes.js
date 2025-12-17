@@ -13,17 +13,16 @@ const {
 
 const { protect, isAdmin } = require("../middlewares/authMiddleware");
 
-// EMPLOYEE + ADMIN CREATE
+// ADMIN ONLY (STATIC FIRST)
+router.get("/export/csv", protect, isAdmin, exportBhwCSV);
+
+// GLOBAL (ADMIN + EMPLOYEE)
+router.get("/", protect, getAllBhwAccounts);
 router.post("/", protect, createBhwAccount);
 
-// EMPLOYEE
-router.get("/me", protect, getMyBhwAccounts);
-router.put("/:id", protect, updateBhwAccount);
+// ADMIN ONLY (DYNAMIC LAST)
+router.put("/:id", protect, isAdmin, updateBhwAccount);
 router.patch("/:id/toggle", protect, toggleBhwStatus);
-router.delete("/:id", protect, deleteBhwAccount);
-
-// ADMIN
-router.get("/all", protect, isAdmin, getAllBhwAccounts);
-router.get("/export/csv", protect, isAdmin, exportBhwCSV);
+router.delete("/:id", protect, isAdmin, deleteBhwAccount);
 
 module.exports = router;

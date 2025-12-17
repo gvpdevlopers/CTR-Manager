@@ -1,8 +1,26 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: 248 250 252; /* slate-50 */
+  --text: 15 23 42; /* slate-900 */
+  --card: 255 255 255; /* white */
+  --border: 226 232 240; /* slate-200 */
+}
+
+.dark {
+  --bg: 2 6 23; /* slate-950 */
+  --text: 241 245 249; /* slate-100 */
+  --card: 30 41 59; /* slate-800 */
+  --border: 51 65 85; /* slate-700 */
+}
+
 .input {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
   border-radius: 6px;
+  background-color: rgb(var(--card));
+  color: rgb(var(--text));
+  border: 1px solid rgb(var(--border));
 }

@@ -25,14 +25,28 @@ exports.createQuoraAccount = async (req, res) => {
 };
 
 // ✅ EMPLOYEE — GET OWN
-exports.getMyQuoraAccounts = async (req, res) => {
+// exports.getMyQuoraAccounts = async (req, res) => {
+//   try {
+//     const accounts = await QuoraAccount.find({
+//       ownerEmployeeId: req.user._id,
+//     }).sort({ createdAt: -1 });
+
+//     res.json(accounts);
+//   } catch {
+//     res.status(500).json({ message: "Fetch failed" });
+//   }
+// };
+
+// ✅ ADMIN + EMPLOYEE — GET ALL (GLOBAL)
+exports.getAllQuoraAccounts = async (req, res) => {
   try {
-    const accounts = await QuoraAccount.find({
-      ownerEmployeeId: req.user._id,
-    }).sort({ createdAt: -1 });
+    const accounts = await QuoraAccount.find()
+      .populate("ownerEmployeeId", "fullName username role")
+      .sort({ createdAt: -1 });
 
     res.json(accounts);
-  } catch {
+  } catch (err) {
+    console.error("Quora GET error:", err);
     res.status(500).json({ message: "Fetch failed" });
   }
 };

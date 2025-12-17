@@ -22,14 +22,28 @@ exports.createBhwAccount = async (req, res) => {
 };
 
 // ✅ EMPLOYEE — GET OWN
-exports.getMyBhwAccounts = async (req, res) => {
+// exports.getMyBhwAccounts = async (req, res) => {
+//   try {
+//     const accounts = await BhwAccount.find({
+//       ownerEmployeeId: req.user._id,
+//     }).sort({ createdAt: -1 });
+
+//     res.json(accounts);
+//   } catch {
+//     res.status(500).json({ message: "Fetch failed" });
+//   }
+// };
+
+// ✅ ADMIN + EMPLOYEE — GET ALL (GLOBAL)
+exports.getAllBhwAccounts = async (req, res) => {
   try {
-    const accounts = await BhwAccount.find({
-      ownerEmployeeId: req.user._id,
-    }).sort({ createdAt: -1 });
+    const accounts = await BhwAccount.find()
+      .populate("ownerEmployeeId", "fullName username role")
+      .sort({ createdAt: -1 });
 
     res.json(accounts);
-  } catch {
+  } catch (err) {
+    console.error("BHW GET error:", err);
     res.status(500).json({ message: "Fetch failed" });
   }
 };

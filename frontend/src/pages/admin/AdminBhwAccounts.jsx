@@ -1,19 +1,27 @@
-// src/pages/admin/AdminBhwAccounts.jsx
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 
-/* ================= UI CLASSES ================= */
+/* ========= COMMON UI CLASSES ========= */
+
 const searchInput =
-  "w-full md:w-1/3 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full md:w-1/3 rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 placeholder-gray-400 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:placeholder-gray-500";
 
 const inlineInput =
-  "w-full bg-transparent border-b border-gray-500 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition";
+  "w-full bg-transparent border-b border-gray-400 text-gray-900 placeholder-gray-400 " +
+  "focus:outline-none focus:border-blue-500 transition " +
+  "dark:border-gray-500 dark:text-white dark:placeholder-gray-400";
 
 const statusSelect =
-  "bg-gray-900 text-white border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "rounded px-2 py-1 text-xs border focus:outline-none focus:ring-1 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600";
 
 const actionBtn =
-  "px-2 py-1 border rounded text-xs transition hover:opacity-90";
+  "px-3 py-1 border rounded text-xs transition hover:opacity-90";
+
+/* ==================================== */
 
 export default function AdminBhwAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -24,7 +32,7 @@ export default function AdminBhwAccounts() {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/bhw-accounts/all");
+      const res = await API.get("/bhw-accounts");
       setAccounts(res.data || []);
     } catch {
       alert("Failed to load BHW accounts");
@@ -58,15 +66,6 @@ export default function AdminBhwAccounts() {
     }
   };
 
-  const toggleStatus = async (id) => {
-    try {
-      await API.patch(`/bhw-accounts/${id}/toggle`);
-      fetchAccounts();
-    } catch {
-      alert("Toggle failed");
-    }
-  };
-
   const deleteAccount = async (id) => {
     if (!confirm("Delete this BHW account?")) return;
     try {
@@ -78,16 +77,20 @@ export default function AdminBhwAccounts() {
   };
 
   const exportCSV = async () => {
-    const res = await API.get("/bhw-accounts/export/csv", {
-      responseType: "blob",
-    });
-    const blob = new Blob([res.data], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "bhw_accounts.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const res = await API.get("/bhw-accounts/export/csv", {
+        responseType: "blob",
+      });
+      const blob = new Blob([res.data], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bhw_accounts.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("CSV export failed");
+    }
   };
 
   /* ================= FILTER ================= */
@@ -96,8 +99,7 @@ export default function AdminBhwAccounts() {
     return (
       acc.userId?.toLowerCase().includes(q) ||
       acc.name?.toLowerCase().includes(q) ||
-      acc.email?.toLowerCase().includes(q) ||
-      acc.ownerEmployeeId?.fullName?.toLowerCase().includes(q)
+      acc.email?.toLowerCase().includes(q)
     );
   });
 
@@ -112,7 +114,9 @@ export default function AdminBhwAccounts() {
     <div className="space-y-5">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">BHW Accounts</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          BHW Accounts
+        </h2>
 
         <button
           onClick={exportCSV}
@@ -124,55 +128,58 @@ export default function AdminBhwAccounts() {
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-100 text-blue-900 p-3 rounded">
+        <div className="p-3 rounded bg-blue-100 text-blue-900 dark:bg-blue-500/20 dark:text-blue-300">
           Total: {total}
         </div>
-        <div className="bg-green-100 text-green-900 p-3 rounded">
+        <div className="p-3 rounded bg-green-100 text-green-900 dark:bg-green-500/20 dark:text-green-300">
           Working: {working}
         </div>
-        <div className="bg-yellow-100 text-yellow-900 p-3 rounded">
+        <div className="p-3 rounded bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300">
           Suspicious: {suspicious}
         </div>
-        <div className="bg-red-100 text-red-900 p-3 rounded">
+        <div className="p-3 rounded bg-red-100 text-red-900 dark:bg-red-500/20 dark:text-red-300">
           Not Working: {notWorking}
         </div>
       </div>
 
       {/* SEARCH */}
       <input
-        placeholder="Search by userId / name / email / owner..."
+        placeholder="Search by userId / name / email..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className={searchInput}
       />
 
       {/* TABLE */}
-      <div className="bg-gray-800 rounded shadow overflow-x-auto">
+      <div
+        className="rounded shadow overflow-x-auto
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-700 text-gray-300">
-              <th className="px-2 py-2 text-left">Sr</th>
-              <th className="py-2 text-left">Owner</th>
-              <th className="py-2 text-left">User ID</th>
-              <th className="py-2 text-left">Name</th>
-              <th className="py-2 text-left">Email</th>
-              <th className="py-2 text-left">Password</th>
-              <th className="py-2 text-left">Link</th>
-              <th className="py-2 text-left">Status</th>
-              <th className="py-2 text-right pr-2">Actions</th>
+          <thead className="bg-gray-100 dark:bg-gray-900">
+            <tr className="text-left text-gray-700 dark:text-gray-300">
+              <th className="px-2 py-2">Sr</th>
+              <th>User ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Password</th>
+              <th>Link</th>
+              <th>Status</th>
+              <th className="text-right pr-2">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="9" className="py-6 text-center text-gray-400">
+                <td colSpan="8" className="py-6 text-center text-gray-400">
                   Loading...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan="9" className="py-6 text-center text-gray-400">
+                <td colSpan="8" className="py-6 text-center text-gray-400">
                   No BHW accounts found
                 </td>
               </tr>
@@ -180,20 +187,16 @@ export default function AdminBhwAccounts() {
               filtered.map((acc, i) => (
                 <tr
                   key={acc._id}
-                  className="border-b border-gray-700 hover:bg-white/5 transition text-gray-200"
+                  className="border-t border-gray-200 dark:border-gray-700
+                  hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 >
-                  <td className="px-2 py-2">{i + 1}</td>
-
-                  <td className="py-2">
-                    {acc.ownerEmployeeId?.fullName ||
-                      acc.ownerEmployeeId?.username ||
-                      "—"}
+                  <td className="px-2 py-2 text-gray-900 dark:text-gray-100">
+                    {i + 1}
                   </td>
 
                   <td className="py-2">
                     <input
                       defaultValue={acc.userId}
-                      placeholder="—"
                       onBlur={(e) =>
                         updateField(acc._id, "userId", e.target.value)
                       }
@@ -204,7 +207,6 @@ export default function AdminBhwAccounts() {
                   <td className="py-2">
                     <input
                       defaultValue={acc.name}
-                      placeholder="—"
                       onBlur={(e) =>
                         updateField(acc._id, "name", e.target.value)
                       }
@@ -215,7 +217,6 @@ export default function AdminBhwAccounts() {
                   <td className="py-2">
                     <input
                       defaultValue={acc.email}
-                      placeholder="—"
                       onBlur={(e) =>
                         updateField(acc._id, "email", e.target.value)
                       }
@@ -226,7 +227,6 @@ export default function AdminBhwAccounts() {
                   <td className="py-2">
                     <input
                       defaultValue={acc.password}
-                      placeholder="—"
                       onBlur={(e) =>
                         updateField(acc._id, "password", e.target.value)
                       }
@@ -237,7 +237,6 @@ export default function AdminBhwAccounts() {
                   <td className="py-2">
                     <input
                       defaultValue={acc.link}
-                      placeholder="—"
                       onBlur={(e) =>
                         updateField(acc._id, "link", e.target.value)
                       }
@@ -251,34 +250,16 @@ export default function AdminBhwAccounts() {
                       onChange={(e) => changeStatus(acc._id, e.target.value)}
                       className={statusSelect}
                     >
-                      <option className="bg-white text-black" value="working">
-                        Working
-                      </option>
-                      <option
-                        className="bg-white text-black"
-                        value="suspicious"
-                      >
-                        Suspicious
-                      </option>
-                      <option
-                        className="bg-white text-black"
-                        value="not_working"
-                      >
-                        Not Working
-                      </option>
+                      <option value="working">Working</option>
+                      <option value="suspicious">Suspicious</option>
+                      <option value="not_working">Not Working</option>
                     </select>
                   </td>
 
-                  <td className="py-2 text-right space-x-2 pr-2">
-                    <button
-                      onClick={() => toggleStatus(acc._id)}
-                      className={`${actionBtn} border-blue-600 text-blue-400`}
-                    >
-                      Toggle
-                    </button>
+                  <td className="py-2 text-right pr-2">
                     <button
                       onClick={() => deleteAccount(acc._id)}
-                      className={`${actionBtn} border-red-600 text-red-400`}
+                      className={`${actionBtn} border-red-600 text-red-600 dark:text-red-400`}
                     >
                       Delete
                     </button>

@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import API from "../../services/api";
 
 /* =========================
-   UI CLASSES
+   INPUT / SELECT CLASSES
 ========================= */
 const inputClass =
-  "w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 placeholder-gray-500 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-500 dark:placeholder-gray-400";
 
 const selectClass =
-  "bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600";
 
 export default function AdminDailyTasks() {
   const [tasks, setTasks] = useState([]);
@@ -20,7 +24,7 @@ export default function AdminDailyTasks() {
   const [toast, setToast] = useState(null);
 
   /* =========================
-     HELPERS
+     TOAST
   ========================= */
   const showToast = (type, text, timeout = 2500) => {
     setToast({ type, text });
@@ -72,7 +76,7 @@ export default function AdminDailyTasks() {
   };
 
   /* =========================
-     BULK ADD TASKS
+     BULK ADD
   ========================= */
   const addBulkTasks = async () => {
     if (!bulkText.trim()) return;
@@ -154,7 +158,9 @@ export default function AdminDailyTasks() {
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Daily Tasks</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Daily Tasks
+        </h2>
 
         <button
           onClick={exportCSV}
@@ -165,21 +171,27 @@ export default function AdminDailyTasks() {
       </div>
 
       {/* ADD SINGLE */}
-      <div className="bg-gray-800 p-5 rounded shadow space-y-3">
-        <h3 className="font-semibold text-white">Add Task (Single)</h3>
+      <div
+        className="p-5 rounded shadow space-y-3
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white">
+          Add Task (Single)
+        </h3>
 
         <div className="flex flex-col md:flex-row gap-3 items-center">
           <input
             value={taskText}
             onChange={(e) => setTaskText(e.target.value)}
             placeholder="Enter task..."
-            className={`${inputClass} flex-3`}
+            className={`flex-1 ${inputClass}`}
           />
 
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className={`${selectClass} flex-1`}
+            className={selectClass}
           >
             <option value="instagram">Instagram</option>
             <option value="reddit">Reddit</option>
@@ -190,7 +202,7 @@ export default function AdminDailyTasks() {
           <button
             onClick={addSingleTask}
             disabled={loading}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
           >
             {loading ? "Adding..." : "Add Task"}
           </button>
@@ -198,8 +210,12 @@ export default function AdminDailyTasks() {
       </div>
 
       {/* BULK UPLOAD */}
-      <div className="bg-gray-800 p-5 rounded shadow space-y-3">
-        <h3 className="font-semibold text-white">
+      <div
+        className="p-5 rounded shadow space-y-3
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white">
           Bulk Upload (One task per line)
         </h3>
 
@@ -225,7 +241,9 @@ Comment on 5 reels`}
 
       {/* FILTER */}
       <div className="flex items-center gap-3">
-        <span className="text-white">Filter:</span>
+        <span className="text-gray-900 dark:text-white font-medium">
+          Filter:
+        </span>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -240,28 +258,38 @@ Comment on 5 reels`}
       </div>
 
       {/* TASK LIST */}
-      <div className="bg-gray-800 p-5 rounded shadow">
-        <h3 className="font-semibold text-white mb-3">All Tasks</h3>
+      <div
+        className="p-5 rounded shadow
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+          All Tasks
+        </h3>
 
         {filteredTasks.length === 0 ? (
-          <p className="text-gray-400">No tasks found.</p>
+          <p className="text-gray-500 dark:text-gray-400">No tasks found.</p>
         ) : (
           <ul className="space-y-2">
             {filteredTasks.map((task) => (
               <li
                 key={task._id}
-                className="flex justify-between items-center bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white"
+                className="flex justify-between items-center px-3 py-2 rounded border
+                  bg-gray-50 border-gray-200
+                  dark:bg-gray-900 dark:border-gray-700"
               >
-                <span>
+                <span className="text-gray-900 dark:text-gray-100">
                   {task.keywordOrTask}
-                  <span className="text-xs text-gray-400 ml-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                     ({task.platform})
                   </span>
                 </span>
 
                 <button
                   onClick={() => deleteTask(task._id)}
-                  className="text-red-400 hover:text-red-500 border border-red-500/30 px-3 py-1 rounded"
+                  className="text-red-600 hover:text-red-700
+                    dark:text-red-400 dark:hover:text-red-500
+                    border border-red-500/40 px-3 py-1 rounded"
                 >
                   Delete
                 </button>
@@ -274,17 +302,10 @@ Comment on 5 reels`}
       {/* TOAST */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-2 rounded shadow-lg ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
+          className={`fixed top-5 right-5 z-50 px-4 py-2 rounded shadow-lg text-white
+            ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
         >
-          <span className="font-bold">
-            {toast.type === "success" ? "✅" : "❌"}
-          </span>
-          <span className="text-sm">{toast.text}</span>
-          <button onClick={() => setToast(null)}>✕</button>
+          {toast.text}
         </div>
       )}
     </div>

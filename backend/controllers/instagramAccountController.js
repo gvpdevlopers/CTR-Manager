@@ -7,7 +7,7 @@ exports.createInstagramAccount = async (req, res) => {
     const { name, username, password, link } = req.body;
 
     const account = await InstagramAccount.create({
-      ownerEmployeeId: req.user._id,
+      ownedBy: req.user._id,
       name,
       username,
       password,
@@ -20,12 +20,24 @@ exports.createInstagramAccount = async (req, res) => {
   }
 };
 
-// ✅ EMPLOYEE — GET OWN ACCOUNTS
-exports.getMyInstagramAccounts = async (req, res) => {
+//  EMPLOYEE — GET OWN ACCOUNTS
+// exports.getMyInstagramAccounts = async (req, res) => {
+//   try {
+//     const accounts = await InstagramAccount.find({
+//       ownedBy: req.user._id,
+//     }).sort({ createdAt: -1 });
+
+//     res.json(accounts);
+//   } catch {
+//     res.status(500).json({ message: "Fetch failed" });
+//   }
+// };
+// ✅ ADMIN + EMPLOYEE — GET ALL ACCOUNTS (GLOBAL)
+exports.getAllInstagramAccounts = async (req, res) => {
   try {
-    const accounts = await InstagramAccount.find({
-      ownerEmployeeId: req.user._id,
-    }).sort({ createdAt: -1 });
+    const accounts = await InstagramAccount.find()
+      .populate("ownedBy", "fullName username role")
+      .sort({ createdAt: -1 });
 
     res.json(accounts);
   } catch {
@@ -37,7 +49,7 @@ exports.getMyInstagramAccounts = async (req, res) => {
 exports.getAllInstagramAccounts = async (req, res) => {
   try {
     const accounts = await InstagramAccount.find().populate(
-      "ownerEmployeeId",
+      "ownedBy",
       "fullName username"
     );
 
@@ -47,20 +59,32 @@ exports.getAllInstagramAccounts = async (req, res) => {
   }
 };
 
-// ✅ EMPLOYEE / ADMIN — INLINE UPDATE
+// ✅ EMPLOYEE / ADMIN — INLINE UPDATE (FIXED)
 exports.updateInstagramAccount = async (req, res) => {
   try {
-    const { status } = req.body;
+    const allowedFields = ["name", "username", "password", "link", "status"];
+
+    const updates = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
 
     const updated = await InstagramAccount.findByIdAndUpdate(
       req.params.id,
-      { status },
-      { new: true }
+      { $set: updates },
+      { new: true, runValidators: true }
     );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Account not found" });
+    }
 
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ message: "Status update failed" });
+    console.error(err);
+    res.status(500).json({ message: "Update failed" });
   }
 };
 
@@ -91,7 +115,7 @@ exports.deleteInstagramAccount = async (req, res) => {
 exports.exportInstagramCSV = async (req, res) => {
   try {
     const accounts = await InstagramAccount.find().populate(
-      "ownerEmployeeId",
+      "ownedBy",
       "fullName"
     );
 

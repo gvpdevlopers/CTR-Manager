@@ -7,22 +7,22 @@ export default function EmployeeLayout() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
+    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
       {/* Overlay for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 md:hidden"
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Main Content */}
+      {/* Main content area */}
       <div className="flex-1 flex flex-col">
         <Header setIsOpen={setIsOpen} />
-        <main className="p-4">
+
+        <main className="flex-1 overflow-y-auto p-4">
           <Outlet />
         </main>
       </div>

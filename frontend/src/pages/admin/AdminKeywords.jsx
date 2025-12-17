@@ -2,13 +2,17 @@ import { useEffect, useState } from "react";
 import API from "../../services/api";
 
 /* =====================
-   COMMON STYLES
+   INPUT / SELECT STYLES
 ===================== */
 const inputClass =
-  "w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 placeholder-gray-500 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-500 dark:placeholder-gray-400";
 
 const selectClass =
-  "bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-500";
 
 export default function AdminKeywords() {
   const [keywords, setKeywords] = useState([]);
@@ -28,7 +32,7 @@ export default function AdminKeywords() {
   };
 
   /* =====================
-     FETCH
+     FETCH KEYWORDS
   ===================== */
   const fetchKeywords = async () => {
     try {
@@ -112,7 +116,7 @@ export default function AdminKeywords() {
   };
 
   /* =====================
-     CSV EXPORT
+     EXPORT CSV
   ===================== */
   const exportCSV = async () => {
     try {
@@ -142,10 +146,12 @@ export default function AdminKeywords() {
      UI
   ===================== */
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Keywords Management</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Keywords Management
+        </h2>
 
         <button
           onClick={exportCSV}
@@ -156,34 +162,32 @@ export default function AdminKeywords() {
       </div>
 
       {/* SINGLE ADD */}
-      <div className="bg-gray-800 p-5 rounded shadow space-y-3">
-        <h3 className="font-semibold text-white">Add Keyword (Single)</h3>
+      <div
+        className="p-5 rounded shadow space-y-3
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white">
+          Add Keyword (Single)
+        </h3>
 
         <div className="flex flex-col md:flex-row gap-3">
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="Enter keyword..."
-            className={`${inputClass} flex-[3]`}
+            className={`flex-1 ${inputClass}`}
           />
 
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className={`${selectClass} flex-[1]`}
+            className={selectClass}
           >
-            <option className="bg-white text-black" value="instagram">
-              Instagram
-            </option>
-            <option className="bg-white text-black" value="reddit">
-              Reddit
-            </option>
-            <option className="bg-white text-black" value="quora">
-              Quora
-            </option>
-            <option className="bg-white text-black" value="bhw">
-              BHW
-            </option>
+            <option value="instagram">Instagram</option>
+            <option value="reddit">Reddit</option>
+            <option value="quora">Quora</option>
+            <option value="bhw">BHW</option>
           </select>
 
           <button
@@ -197,8 +201,12 @@ export default function AdminKeywords() {
       </div>
 
       {/* BULK ADD */}
-      <div className="bg-gray-800 p-5 rounded shadow space-y-3">
-        <h3 className="font-semibold text-white">
+      <div
+        className="p-5 rounded shadow space-y-3
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white">
           Bulk Upload Keywords (One per line)
         </h3>
 
@@ -210,7 +218,7 @@ export default function AdminKeywords() {
 buy followers
 best reels strategy
 reddit karma`}
-          className="w-full bg-gray-900 border border-gray-600 rounded p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={inputClass}
         />
 
         <button
@@ -224,53 +232,55 @@ reddit karma`}
 
       {/* FILTER */}
       <div className="flex gap-3 items-center">
-        <span className="text-white">Filter:</span>
+        <span className="font-medium text-gray-900 dark:text-white">
+          Filter:
+        </span>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className={selectClass}
         >
-          <option className="bg-white text-black" value="all">
-            All
-          </option>
-          <option className="bg-white text-black" value="instagram">
-            Instagram
-          </option>
-          <option className="bg-white text-black" value="reddit">
-            Reddit
-          </option>
-          <option className="bg-white text-black" value="quora">
-            Quora
-          </option>
-          <option className="bg-white text-black" value="bhw">
-            BHW
-          </option>
+          <option value="all">All</option>
+          <option value="instagram">Instagram</option>
+          <option value="reddit">Reddit</option>
+          <option value="quora">Quora</option>
+          <option value="bhw">BHW</option>
         </select>
       </div>
 
       {/* LIST */}
-      <div className="bg-gray-800 p-5 rounded shadow">
-        <h3 className="font-semibold mb-3 text-white">All Keywords</h3>
+      <div
+        className="p-5 rounded shadow
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
+        <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">
+          All Keywords
+        </h3>
 
         {filteredKeywords.length === 0 ? (
-          <p className="text-gray-400">No keywords found.</p>
+          <p className="text-gray-500 dark:text-gray-400">No keywords found.</p>
         ) : (
           <ul className="space-y-2">
             {filteredKeywords.map((item) => (
               <li
                 key={item._id}
-                className="border border-gray-700 p-2 rounded flex justify-between items-center text-white"
+                className="flex justify-between items-center px-3 py-2 rounded border
+                  bg-gray-50 border-gray-200
+                  dark:bg-gray-900 dark:border-gray-700"
               >
-                <span>
+                <span className="text-gray-900 dark:text-gray-100">
                   {item.keyword}
-                  <span className="text-xs text-gray-400 ml-2">
+                  {/* <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                     ({item.platform})
-                  </span>
+                  </span> */}
                 </span>
 
                 <button
                   onClick={() => deleteKeyword(item._id)}
-                  className="text-red-400 hover:text-red-500 border border-red-500/40 px-3 py-1 rounded"
+                  className="text-red-600 hover:text-red-700
+                    dark:text-red-400 dark:hover:text-red-500
+                    border border-red-500/40 px-3 py-1 rounded"
                 >
                   Delete
                 </button>
@@ -283,22 +293,10 @@ reddit karma`}
       {/* TOAST */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-2 rounded shadow-lg ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
+          className={`fixed top-5 right-5 z-50 px-4 py-2 rounded shadow-lg text-white
+            ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
         >
-          <span className="text-lg">
-            {toast.type === "success" ? "✅" : "❌"}
-          </span>
-          <span className="text-sm font-medium">{toast.text}</span>
-          <button
-            onClick={() => setToast(null)}
-            className="ml-2 opacity-80 hover:opacity-100"
-          >
-            ✕
-          </button>
+          {toast.text}
         </div>
       )}
     </div>

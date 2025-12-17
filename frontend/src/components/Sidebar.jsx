@@ -5,23 +5,33 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const { user } = useAuth();
 
   const linkClass = ({ isActive }) =>
-    `block px-3 py-2 rounded ${
-      isActive ? "bg-blue-600 text-white" : "hover:bg-gray-700 text-white"
-    }`;
+    `block px-3 py-2 rounded transition-colors
+     ${
+       isActive
+         ? "bg-blue-600 text-white"
+         : "text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+     }`;
 
   return (
     <div
-      className={`fixed md:relative z-50 top-0 left-0 h-screen w-64 
-  bg-gray-900 shadow-lg transform overflow-y-auto 
-  ${isOpen ? "translate-x-0" : "-translate-x-full"} 
+      className={`fixed md:relative z-50 top-0 left-0 h-screen w-64
+  bg-white dark:bg-gray-900
+  border-r border-gray-200 dark:border-gray-700
+  shadow-lg transform
+  ${isOpen ? "translate-x-0" : "-translate-x-full"}
   md:translate-x-0 transition-transform duration-300`}
     >
-      <div className="p-4 text-lg font-bold border-b text-white sticky top-0 bg-gray-900 z-10">
+      <div
+        className="p-4 text-lg font-bold sticky top-0 z-10
+    bg-white dark:bg-gray-900
+    text-gray-900 dark:text-white
+    border-b border-gray-200 dark:border-gray-700"
+      >
         CTR Monitor
       </div>
-
-      <nav className="p-4 flex flex-col gap-2 text-sm">
-        {/*  ADMIN LINKS */}
+      {/* Navigation */}
+      <nav className="p-4 flex flex-col gap-2 text-sm overflow-y-auto h-[calc(100vh-64px)]">
+        {/* ADMIN LINKS */}
         {user?.role === "admin" && (
           <>
             <NavLink to="/admin" end className={linkClass}>
@@ -62,7 +72,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           </>
         )}
 
-        {/*  EMPLOYEE LINKS */}
+        {/* EMPLOYEE LINKS */}
         {user?.role === "employee" && (
           <>
             <NavLink to="/employee" end className={linkClass}>

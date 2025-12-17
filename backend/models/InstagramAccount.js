@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const instagramAccountSchema = new mongoose.Schema(
   {
-    ownerEmployeeId: {
+    ownedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,

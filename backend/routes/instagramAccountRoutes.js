@@ -12,15 +12,16 @@ const {
 
 const { protect, isAdmin } = require("../middlewares/authMiddleware");
 
-// EMPLOYEE
-router.post("/", protect, createInstagramAccount);
-router.get("/me", protect, getMyInstagramAccounts);
-router.put("/:id", protect, updateInstagramAccount);
-router.patch("/:id/toggle", protect, toggleInstagramStatus);
-router.delete("/:id", protect, deleteInstagramAccount);
-
-// ADMIN
-router.get("/all", protect, isAdmin, getAllInstagramAccounts);
+// ADMIN ONLY
 router.get("/export/csv", protect, isAdmin, exportInstagramCSV);
+
+// GLOBAL (ADMIN + EMPLOYEE)
+router.get("/", protect, getAllInstagramAccounts);
+router.post("/", protect, createInstagramAccount);
+
+// ADMIN ONLY
+router.delete("/:id", protect, isAdmin, deleteInstagramAccount);
+router.patch("/:id/toggle", protect, toggleInstagramStatus);
+router.put("/:id", protect, isAdmin, updateInstagramAccount);
 
 module.exports = router;

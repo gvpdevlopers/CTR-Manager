@@ -13,9 +13,9 @@ export default function InstagramAccounts() {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/instagram-accounts/me");
+      const res = await API.get("/instagram-accounts");
       setAccounts(res.data || []);
-    } catch (err) {
+    } catch {
       alert("Failed to load Instagram accounts");
     } finally {
       setLoading(false);
@@ -26,11 +26,9 @@ export default function InstagramAccounts() {
     try {
       const res = await API.get("/ctr/today");
       const map = {};
-
       res.data.forEach((row) => {
         map[row.accountId] = true;
       });
-
       setCtrDoneMap(map);
     } catch {
       // silent
@@ -46,7 +44,6 @@ export default function InstagramAccounts() {
      MARK CTR DONE
   ====================== */
   const markCtrDone = async (accountId) => {
-    // ✅ HARD STOP: do not call API again
     if (ctrDoneMap[accountId]) return;
 
     try {
@@ -55,58 +52,65 @@ export default function InstagramAccounts() {
         date: new Date().toISOString().slice(0, 10),
       });
 
-      setCtrDoneMap((prev) => ({
-        ...prev,
-        [accountId]: true,
-      }));
+      setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
     } catch (err) {
-      // ✅ 400 = already marked → silently accept
       if (err.response?.status === 400) {
-        setCtrDoneMap((prev) => ({
-          ...prev,
-          [accountId]: true,
-        }));
+        setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
         return;
       }
-
       console.error("CTR ERROR:", err);
     }
   };
 
   /* ======================
-     FILTER
+     FILTER + COUNTS
   ====================== */
   const filteredAccounts = accounts.filter((acc) =>
     (acc.username || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  /* ======================
-     COUNTS (MATCH DB VALUES)
-  ====================== */
   const total = accounts.length;
   const working = accounts.filter((a) => a.status === "working").length;
   const suspicious = accounts.filter((a) => a.status === "suspicious").length;
   const notWorking = accounts.filter((a) => a.status === "not_working").length;
 
   /* ======================
+     STYLES
+  ====================== */
+  const card =
+    "rounded border p-3 font-semibold bg-white border-gray-200 " +
+    "dark:bg-gray-800 dark:border-gray-700";
+
+  const input =
+    "p-2 rounded border w-full md:w-1/3 bg-white text-gray-900 placeholder-gray-400 " +
+    "border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+    "dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 dark:placeholder-gray-500";
+
+  const tableWrap =
+    "rounded border overflow-x-auto bg-white border-gray-200 " +
+    "dark:bg-gray-800 dark:border-gray-700";
+
+  /* ======================
      UI
   ====================== */
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Instagram Accounts</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        Instagram Accounts
+      </h2>
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-500/20 text-blue-300 p-3 rounded font-semibold">
+        <div className={`${card} text-blue-600 dark:text-blue-400`}>
           Total: {total}
         </div>
-        <div className="bg-green-500/20 text-green-300 p-3 rounded font-semibold">
+        <div className={`${card} text-green-600 dark:text-green-400`}>
           Working: {working}
         </div>
-        <div className="bg-yellow-500/20 text-yellow-300 p-3 rounded font-semibold">
+        <div className={`${card} text-yellow-600 dark:text-yellow-400`}>
           Suspicious: {suspicious}
         </div>
-        <div className="bg-red-500/20 text-red-300 p-3 rounded font-semibold">
+        <div className={`${card} text-red-600 dark:text-red-400`}>
           Not Working: {notWorking}
         </div>
       </div>
@@ -116,14 +120,14 @@ export default function InstagramAccounts() {
         placeholder="Search by username..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full md:w-1/3 p-2 rounded bg-gray-900 text-gray-200 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className={input}
       />
 
       {/* TABLE */}
-      <div className="bg-gray-800 rounded shadow overflow-x-auto">
-        <table className="w-full text-sm text-gray-200">
-          <thead>
-            <tr className="border-b border-gray-700 text-gray-300">
+      <div className={tableWrap}>
+        <table className="w-full text-sm">
+          <thead className="bg-gray-100 dark:bg-gray-700">
+            <tr className="text-gray-700 dark:text-gray-100">
               <th className="py-2 px-3 text-left">Sr</th>
               <th className="py-2 px-3 text-left">Name</th>
               <th className="py-2 px-3 text-left">Username</th>
@@ -134,16 +138,16 @@ export default function InstagramAccounts() {
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="text-gray-800 dark:text-gray-100">
             {loading ? (
               <tr>
-                <td colSpan="7" className="py-6 text-center text-gray-400">
+                <td colSpan="7" className="py-6 text-center text-gray-500">
                   Loading...
                 </td>
               </tr>
             ) : filteredAccounts.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-6 text-center text-gray-400">
+                <td colSpan="7" className="py-6 text-center text-gray-500">
                   No Instagram accounts found
                 </td>
               </tr>
@@ -151,7 +155,10 @@ export default function InstagramAccounts() {
               filteredAccounts.map((acc, index) => (
                 <tr
                   key={acc._id}
-                  className="border-b border-gray-700 hover:bg-gray-700/40 transition"
+                  className="
+          border-t border-gray-200 dark:border-gray-700
+          hover:bg-gray-100 dark:hover:bg-gray-700/60
+        "
                 >
                   <td className="py-2 px-3">{index + 1}</td>
                   <td className="py-2 px-3">{acc.name || "—"}</td>
@@ -160,20 +167,18 @@ export default function InstagramAccounts() {
                   <td className="py-2 px-3 truncate max-w-xs">
                     {acc.link || "—"}
                   </td>
+
+                  {/* STATUS */}
                   <td className="py-2 px-3">
                     <select
-                      value={acc.status} // must match DB value exactly
+                      value={acc.status}
                       onChange={async (e) => {
                         const newStatus = e.target.value;
-
                         try {
                           await API.patch(
                             `/instagram-accounts/${acc._id}/toggle`,
-                            {
-                              status: newStatus,
-                            }
+                            { status: newStatus }
                           );
-
                           setAccounts((prev) =>
                             prev.map((a) =>
                               a._id === acc._id
@@ -181,11 +186,16 @@ export default function InstagramAccounts() {
                                 : a
                             )
                           );
-                        } catch (err) {
+                        } catch {
                           alert("Failed to update status");
                         }
                       }}
-                      className="bg-gray-900 text-gray-200 border border-gray-700 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="
+                        bg-white text-gray-900 border border-gray-300
+                        rounded px-2 py-1 text-xs
+                        focus:outline-none focus:ring-1 focus:ring-blue-500
+                        dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700
+                      "
                     >
                       <option value="working">Working</option>
                       <option value="suspicious">Suspicious</option>
@@ -193,7 +203,7 @@ export default function InstagramAccounts() {
                     </select>
                   </td>
 
-                  {/* CTR CHECKBOX */}
+                  {/* CTR */}
                   <td className="py-2 px-3 text-center">
                     <input
                       type="checkbox"
@@ -203,7 +213,7 @@ export default function InstagramAccounts() {
                         acc.status === "not_working"
                       }
                       onChange={() => markCtrDone(acc._id)}
-                      className="w-4 h-4 accent-green-500 cursor-pointer disabled:opacity-50"
+                      className="w-4 h-4 accent-green-600 disabled:opacity-50"
                       title={
                         acc.status === "not_working"
                           ? "Account not working"

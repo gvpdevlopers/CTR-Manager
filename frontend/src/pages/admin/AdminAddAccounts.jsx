@@ -1,12 +1,17 @@
-// src/pages/admin/AdminAddAccounts.jsx
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 
+/* ================= INPUT / SELECT CLASSES ================= */
+
 const inputClass =
-  "w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 placeholder-gray-400 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:placeholder-gray-500";
 
 const selectClass =
-  "bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600";
 
 export default function AdminAddAccounts() {
   const [platform, setPlatform] = useState("instagram");
@@ -15,39 +20,29 @@ export default function AdminAddAccounts() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔔 TOAST STATE
   const [toast, setToast] = useState(null);
-  // { type: "success" | "error", text: string }
 
-  /* ===========================
-     FETCH EMPLOYEES
-  ============================ */
+  /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
     API.get("/admin/employees")
       .then((res) => setEmployees(res.data || []))
       .catch(() => setEmployees([]));
   }, []);
 
-  /* ===========================
-     TOAST AUTO DISMISS
-  ============================ */
+  /* ================= TOAST AUTO HIDE ================= */
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 3000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(t);
   }, [toast]);
 
-  /* ===========================
-     HELPERS
-  ============================ */
+  /* ================= HELPERS ================= */
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const resetForm = () => setForm({});
 
-  const showToast = (type, text) => {
-    setToast({ type, text });
-  };
+  const showToast = (type, text) => setToast({ type, text });
 
   const getApiUrl = () => {
     if (platform === "instagram") return "/instagram-accounts";
@@ -56,9 +51,7 @@ export default function AdminAddAccounts() {
     if (platform === "bhw") return "/bhw-accounts";
   };
 
-  /* ===========================
-     SINGLE ADD
-  ============================ */
+  /* ================= SINGLE ADD ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -80,9 +73,7 @@ export default function AdminAddAccounts() {
     }
   };
 
-  /* ===========================
-     BULK ADD
-  ============================ */
+  /* ================= BULK ADD ================= */
   const handleBulkAdd = async () => {
     if (!bulkText.trim()) return;
 
@@ -147,12 +138,13 @@ export default function AdminAddAccounts() {
     }
   };
 
-  /* ===========================
-     UI
-  ============================ */
+  /* ================= UI ================= */
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-white">Add CTR Accounts</h2>
+    <div className="max-w-full mx-auto space-y-6">
+      {/* TITLE */}
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        Add CTR Accounts
+      </h2>
 
       {/* PLATFORM SELECT */}
       <select
@@ -163,28 +155,21 @@ export default function AdminAddAccounts() {
         }}
         className={selectClass}
       >
-        <option className="bg-white text-black" value="instagram">
-          Instagram
-        </option>
-        <option className="bg-white text-black" value="reddit">
-          Reddit
-        </option>
-        <option className="bg-white text-black" value="quora">
-          Quora
-        </option>
-        <option className="bg-white text-black" value="bhw">
-          BHW
-        </option>
+        <option value="instagram">Instagram</option>
+        <option value="reddit">Reddit</option>
+        <option value="quora">Quora</option>
+        <option value="bhw">BHW</option>
       </select>
 
       {/* SINGLE ADD */}
       <form
         onSubmit={handleSubmit}
-        className={`bg-gray-800 p-5 rounded shadow grid grid-cols-1 md:grid-cols-2 gap-4 ${
-          loading ? "opacity-60 pointer-events-none" : ""
-        }`}
+        className={`p-5 rounded shadow grid grid-cols-1 md:grid-cols-2 gap-4
+          bg-white dark:bg-gray-800
+          border border-gray-200 dark:border-gray-700
+          ${loading ? "opacity-60 pointer-events-none" : ""}`}
       >
-        <h3 className="md:col-span-2 font-semibold text-white">
+        <h3 className="md:col-span-2 font-semibold text-gray-900 dark:text-white">
           Add Platform Account (Single)
         </h3>
 
@@ -197,11 +182,7 @@ export default function AdminAddAccounts() {
         >
           <option value="">Assign to (optional)</option>
           {employees.map((emp) => (
-            <option
-              key={emp._id}
-              value={emp._id}
-              className="bg-white text-black"
-            >
+            <option key={emp._id} value={emp._id}>
               {emp.fullName || emp.username}
             </option>
           ))}
@@ -337,7 +318,7 @@ export default function AdminAddAccounts() {
 
         <button
           type="submit"
-          className="md:col-span-2 bg-blue-600 hover:bg-blue-700 transition text-white py-2 rounded"
+          className="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
         >
           {loading ? "Adding..." : "Add Account"}
         </button>
@@ -345,11 +326,12 @@ export default function AdminAddAccounts() {
 
       {/* BULK ADD */}
       <div
-        className={`bg-gray-800 p-5 rounded shadow space-y-3 ${
-          loading ? "opacity-60 pointer-events-none" : ""
-        }`}
+        className={`p-5 rounded shadow space-y-3
+          bg-white dark:bg-gray-800
+          border border-gray-200 dark:border-gray-700
+          ${loading ? "opacity-60 pointer-events-none" : ""}`}
       >
-        <h3 className="font-semibold text-white">
+        <h3 className="font-semibold text-gray-900 dark:text-white">
           Bulk Paste (Google Sheet Style)
         </h3>
 
@@ -358,42 +340,26 @@ export default function AdminAddAccounts() {
           value={bulkText}
           onChange={(e) => setBulkText(e.target.value)}
           placeholder="Paste comma separated rows..."
-          className="w-full bg-gray-900 border border-gray-600 rounded p-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded p-3 border focus:outline-none focus:ring-2 focus:ring-blue-500
+            bg-white text-gray-900 border-gray-300 placeholder-gray-400
+            dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:placeholder-gray-500"
         />
 
         <button
           onClick={handleBulkAdd}
-          className="bg-green-600 hover:bg-green-700 transition text-white px-4 py-2 rounded"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
         >
           {loading ? "Uploading..." : "Bulk Upload"}
         </button>
       </div>
 
-      {/* 🔔 TOAST */}
+      {/* TOAST */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-2 rounded shadow-lg ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
+          className={`fixed top-5 right-5 z-50 px-4 py-2 rounded shadow-lg text-white
+            ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
         >
-          <span
-            className={`w-6 h-6 flex items-center justify-center rounded ${
-              toast.type === "success" ? "bg-green-800" : "bg-red-800"
-            }`}
-          >
-            {toast.type === "success" ? "✅" : "❌"}
-          </span>
-
-          <span className="text-sm font-medium">{toast.text}</span>
-
-          <button
-            onClick={() => setToast(null)}
-            className="ml-2 opacity-80 hover:opacity-100"
-          >
-            ✕
-          </button>
+          {toast.text}
         </div>
       )}
     </div>

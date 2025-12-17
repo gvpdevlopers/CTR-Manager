@@ -3,17 +3,26 @@ import { useEffect, useState } from "react";
 import API from "../../services/api";
 
 /* ========= COMMON UI CLASSES ========= */
+
 const inputInline =
-  "w-full bg-transparent border-b border-gray-500 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition";
+  "w-full bg-transparent border-b border-gray-400 text-gray-900 placeholder-gray-400 " +
+  "focus:outline-none focus:border-blue-500 transition " +
+  "dark:border-gray-500 dark:text-white dark:placeholder-gray-400";
 
 const searchInput =
-  "w-full md:w-1/3 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full md:w-1/3 rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 placeholder-gray-400 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:placeholder-gray-500";
 
 const selectStatus =
-  "bg-gray-900 text-white border border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "rounded px-2 py-1 text-sm border focus:outline-none focus:ring-1 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600";
 
 const actionBtn =
-  "px-2 py-1 border rounded text-sm transition hover:opacity-90";
+  "px-3 py-1 border rounded text-sm transition hover:opacity-90";
+
+/* =================================== */
 
 export default function AdminInstagramAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -24,10 +33,9 @@ export default function AdminInstagramAccounts() {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/instagram-accounts/all");
+      const res = await API.get("/instagram-accounts");
       setAccounts(res.data || []);
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Failed to load accounts");
     } finally {
       setLoading(false);
@@ -40,12 +48,17 @@ export default function AdminInstagramAccounts() {
 
   /* ================= ACTIONS ================= */
   const updateField = async (id, field, value) => {
+    if (value === undefined || value === null) return;
+
     try {
-      await API.put(`/instagram-accounts/${id}`, { [field]: value });
-      setAccounts((prev) =>
-        prev.map((a) => (a._id === id ? { ...a, [field]: value } : a))
-      );
-    } catch {
+      await API.put(`/instagram-accounts/${id}`, {
+        [field]: value,
+      });
+
+      //  ALWAYS re-fetch from backend
+      fetchAccounts();
+    } catch (err) {
+      console.error(err);
       alert("Update failed");
     }
   };
@@ -56,15 +69,6 @@ export default function AdminInstagramAccounts() {
       fetchAccounts();
     } catch {
       alert("Status update failed");
-    }
-  };
-
-  const toggleStatus = async (id) => {
-    try {
-      await API.patch(`/instagram-accounts/${id}/toggle`);
-      fetchAccounts();
-    } catch {
-      alert("Toggle failed");
     }
   };
 
@@ -83,8 +87,7 @@ export default function AdminInstagramAccounts() {
     const q = search.toLowerCase();
     return (
       acc.username?.toLowerCase().includes(q) ||
-      acc.name?.toLowerCase().includes(q) ||
-      (acc.ownerEmployeeId?.fullName || "").toLowerCase().includes(q)
+      acc.name?.toLowerCase().includes(q)
     );
   });
 
@@ -99,68 +102,71 @@ export default function AdminInstagramAccounts() {
     <div className="space-y-5">
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Instagram Accounts</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Instagram Accounts
+        </h2>
 
-        <div className="flex gap-2">
-          <button
-            onClick={fetchAccounts}
-            className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded"
-          >
-            Refresh
-          </button>
-        </div>
+        <button
+          onClick={fetchAccounts}
+          className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded"
+        >
+          Refresh
+        </button>
       </div>
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-100 text-blue-900 p-3 rounded">
+        <div className="p-3 rounded bg-blue-100 text-blue-900 dark:bg-blue-500/20 dark:text-blue-300">
           Total: {total}
         </div>
-        <div className="bg-green-100 text-green-900 p-3 rounded">
+        <div className="p-3 rounded bg-green-100 text-green-900 dark:bg-green-500/20 dark:text-green-300">
           Working: {working}
         </div>
-        <div className="bg-yellow-100 text-yellow-900 p-3 rounded">
+        <div className="p-3 rounded bg-yellow-100 text-yellow-900 dark:bg-yellow-500/20 dark:text-yellow-300">
           Suspicious: {suspicious}
         </div>
-        <div className="bg-red-100 text-red-900 p-3 rounded">
+        <div className="p-3 rounded bg-red-100 text-red-900 dark:bg-red-500/20 dark:text-red-300">
           Not Working: {notWorking}
         </div>
       </div>
 
       {/* SEARCH */}
       <input
-        placeholder="Search by username / name / owner..."
+        placeholder="Search by username / name..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className={searchInput}
       />
 
       {/* TABLE */}
-      <div className="bg-gray-800 rounded shadow overflow-x-auto">
+      <div
+        className="rounded shadow overflow-x-auto
+        bg-white dark:bg-gray-800
+        border border-gray-200 dark:border-gray-700"
+      >
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-700 text-gray-300">
-              <th className="py-2 text-left px-2">Sr</th>
-              <th className="py-2 text-left">Owner</th>
-              <th className="py-2 text-left">Name</th>
-              <th className="py-2 text-left">Username</th>
-              <th className="py-2 text-left">Password</th>
-              <th className="py-2 text-left">Link</th>
-              <th className="py-2 text-left">Status</th>
-              <th className="py-2 text-right pr-2">Actions</th>
+          <thead className="bg-gray-100 dark:bg-gray-900">
+            <tr className="text-left text-gray-700 dark:text-gray-300">
+              <th className="py-2 px-2">Sr</th>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Password</th>
+              <th>Link</th>
+              <th>Status</th>
+              <th className="text-right pr-2">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="py-6 text-center text-gray-400">
+                <td colSpan="7" className="py-6 text-center text-gray-400">
                   Loading...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan="8" className="py-6 text-center text-gray-400">
+                <td colSpan="7" className="py-6 text-center text-gray-400">
                   No accounts found
                 </td>
               </tr>
@@ -168,20 +174,25 @@ export default function AdminInstagramAccounts() {
               filtered.map((acc, i) => (
                 <tr
                   key={acc._id}
-                  className="border-b border-gray-700 hover:bg-white/5 transition text-gray-200"
+                  className="border-t border-gray-200 dark:border-gray-700
+                    hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 >
-                  <td className="px-2 py-2">{i + 1}</td>
-
-                  <td className="py-2">
-                    {acc.ownerEmployeeId?.fullName ||
-                      acc.ownerEmployeeId?.username ||
-                      "—"}
+                  <td className="px-2 py-2 text-gray-900 dark:text-gray-100">
+                    {i + 1}
                   </td>
 
                   <td className="py-2">
                     <input
-                      defaultValue={acc.name}
-                      placeholder="—"
+                      value={acc.name || ""}
+                      onChange={(e) =>
+                        setAccounts((prev) =>
+                          prev.map((a) =>
+                            a._id === acc._id
+                              ? { ...a, name: e.target.value }
+                              : a
+                          )
+                        )
+                      }
                       onBlur={(e) =>
                         updateField(acc._id, "name", e.target.value)
                       }
@@ -228,35 +239,16 @@ export default function AdminInstagramAccounts() {
                       onChange={(e) => changeStatus(acc._id, e.target.value)}
                       className={selectStatus}
                     >
-                      <option className="bg-white text-black" value="working">
-                        Working
-                      </option>
-                      <option
-                        className="bg-white text-black"
-                        value="suspicious"
-                      >
-                        Suspicious
-                      </option>
-                      <option
-                        className="bg-white text-black"
-                        value="not_working"
-                      >
-                        Not Working
-                      </option>
+                      <option value="working">Working</option>
+                      <option value="suspicious">Suspicious</option>
+                      <option value="not_working">Not Working</option>
                     </select>
                   </td>
 
-                  <td className="py-2 text-right space-x-2 pr-2">
-                    <button
-                      onClick={() => toggleStatus(acc._id)}
-                      className={`${actionBtn} border-blue-600 text-blue-400`}
-                    >
-                      Toggle
-                    </button>
-
+                  <td className="py-2 text-right pr-2">
                     <button
                       onClick={() => deleteAccount(acc._id)}
-                      className={`${actionBtn} border-red-600 text-red-400`}
+                      className={`${actionBtn} border-red-600 text-red-600 dark:text-red-400`}
                     >
                       Delete
                     </button>

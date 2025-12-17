@@ -19,7 +19,7 @@ export default function DailyTasks() {
   const [success, setSuccess] = useState("");
 
   /* ======================
-     FETCH TASKS (ADMIN + EMPLOYEE)
+     FETCH TASKS
   ====================== */
   const fetchTasks = async () => {
     try {
@@ -50,7 +50,7 @@ export default function DailyTasks() {
       await API.post(TASK_API, {
         platform,
         title,
-        keywordOrTask: title, // 🔥 REQUIRED
+        keywordOrTask: title,
         category: "task",
       });
 
@@ -85,7 +85,7 @@ export default function DailyTasks() {
         await API.post(TASK_API, {
           platform,
           title: row,
-          keywordOrTask: row, // 🔥 REQUIRED
+          keywordOrTask: row,
           category: "task",
         });
       }
@@ -102,46 +102,60 @@ export default function DailyTasks() {
   };
 
   /* ======================
-     FILTERED TASKS
+     FILTER
   ====================== */
   const filteredTasks =
     filter === "all" ? tasks : tasks.filter((t) => t.platform === filter);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Daily Tasks</h2>
+      {/* TITLE */}
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        Daily Tasks
+      </h2>
 
       {/* STATUS MESSAGES */}
       {error && (
-        <div className="bg-red-500/10 text-red-400 px-4 py-2 rounded">
+        <div className="bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400 px-4 py-2 rounded">
           {error}
         </div>
       )}
       {success && (
-        <div className="bg-green-500/10 text-green-400 px-4 py-2 rounded">
+        <div className="bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400 px-4 py-2 rounded">
           {success}
         </div>
       )}
 
-      {/* ADMIN ONLY */}
+      {/* ================= ADMIN ONLY ================= */}
       {user?.role === "admin" && (
         <>
           {/* ADD SINGLE */}
-          <div className="bg-gray-800 p-5 rounded space-y-3">
-            <h3 className="font-semibold text-white">Add Task (Single)</h3>
+          <div className="bg-white dark:bg-gray-800 p-5 rounded shadow space-y-3">
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              Add Task (Single)
+            </h3>
 
             <div className="flex flex-col md:flex-row gap-3">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter task..."
-                className="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400"
+                className="
+                  flex-1 px-3 py-2 rounded
+                  bg-white text-gray-900 border border-gray-300
+                  dark:bg-gray-900 dark:text-gray-200 dark:border-gray-600
+                  focus:outline-none focus:ring-2 focus:ring-blue-500
+                "
               />
 
               <select
                 value={platform}
                 onChange={(e) => setPlatform(e.target.value)}
-                className="bg-gray-900 text-white border border-gray-600 rounded px-3 py-2"
+                className="
+                  px-3 py-2 rounded
+                  bg-white text-gray-900 border border-gray-300
+                  dark:bg-gray-900 dark:text-gray-200 dark:border-gray-600
+                "
               >
                 <option value="instagram">Instagram</option>
                 <option value="reddit">Reddit</option>
@@ -152,7 +166,7 @@ export default function DailyTasks() {
               <button
                 onClick={addSingleTask}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white disabled:opacity-60"
               >
                 {loading ? "Adding..." : "Add Task"}
               </button>
@@ -160,8 +174,8 @@ export default function DailyTasks() {
           </div>
 
           {/* BULK ADD */}
-          <div className="bg-gray-800 p-5 rounded space-y-3">
-            <h3 className="font-semibold text-white">
+          <div className="bg-white dark:bg-gray-800 p-5 rounded shadow space-y-3">
+            <h3 className="font-semibold text-gray-900 dark:text-white">
               Bulk Upload Tasks (One per line)
             </h3>
 
@@ -170,13 +184,18 @@ export default function DailyTasks() {
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
               placeholder={`Follow 5 accounts\nLike 10 posts\nComment on 3 reels`}
-              className="w-full bg-gray-900 border border-gray-600 rounded p-3 text-white placeholder-gray-400"
+              className="
+                w-full p-3 rounded
+                bg-white text-gray-900 border border-gray-300
+                dark:bg-gray-900 dark:text-gray-200 dark:border-gray-600
+                focus:outline-none focus:ring-2 focus:ring-green-500
+              "
             />
 
             <button
               onClick={addBulkTasks}
               disabled={loading}
-              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white"
+              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white disabled:opacity-60"
             >
               {loading ? "Uploading..." : "Bulk Upload"}
             </button>
@@ -186,11 +205,15 @@ export default function DailyTasks() {
 
       {/* FILTER */}
       <div className="flex items-center gap-3">
-        <span className="text-white">Filter:</span>
+        <span className="text-gray-900 dark:text-white">Filter:</span>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="bg-gray-900 text-white border border-gray-600 rounded px-3 py-2"
+          className="
+            px-3 py-2 rounded
+            bg-white text-gray-900 border border-gray-300
+            dark:bg-gray-900 dark:text-gray-200 dark:border-gray-600
+          "
         >
           <option value="all">All</option>
           <option value="instagram">Instagram</option>
@@ -201,20 +224,27 @@ export default function DailyTasks() {
       </div>
 
       {/* TASK LIST */}
-      <div className="bg-gray-800 p-5 rounded">
-        <h3 className="font-semibold text-white mb-3">All Tasks</h3>
+      <div className="bg-white dark:bg-gray-800 p-5 rounded shadow">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+          All Tasks
+        </h3>
 
         {filteredTasks.length === 0 ? (
-          <p className="text-gray-400">No tasks found.</p>
+          <p className="text-gray-500 dark:text-gray-400">No tasks found.</p>
         ) : (
           <ul className="space-y-2">
             {filteredTasks.map((task) => (
               <li
                 key={task._id}
-                className="flex justify-between items-center bg-gray-900 px-4 py-2 rounded text-white"
+                className="
+                  flex justify-between items-center
+                  px-4 py-2 rounded
+                  bg-gray-100 text-gray-900
+                  dark:bg-gray-900 dark:text-gray-100
+                "
               >
                 <span>{task.keywordOrTask}</span>
-                <span className="text-xs text-gray-400 uppercase">
+                <span className="text-xs uppercase opacity-70">
                   {task.platform}
                 </span>
               </li>

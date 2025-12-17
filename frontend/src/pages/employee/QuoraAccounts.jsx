@@ -13,7 +13,7 @@ export default function QuoraAccounts() {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/quora-accounts/me");
+      const res = await API.get("/quora-accounts");
       setAccounts(res.data || []);
     } catch {
       alert("Failed to load Quora accounts");
@@ -55,16 +55,10 @@ export default function QuoraAccounts() {
         date: new Date().toISOString().slice(0, 10),
       });
 
-      setCtrDoneMap((prev) => ({
-        ...prev,
-        [accountId]: true,
-      }));
+      setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
     } catch {
-      // already handled backend-side (idempotent)
-      setCtrDoneMap((prev) => ({
-        ...prev,
-        [accountId]: true,
-      }));
+      // backend is idempotent → mark locally anyway
+      setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
     }
   };
 
@@ -73,7 +67,7 @@ export default function QuoraAccounts() {
   ====================== */
   const changeStatus = async (id, status) => {
     try {
-      await API.put(`/quora-accounts/${id}`, { status });
+      API.patch(`/quora-accounts/${id}/toggle`, { status });
       setAccounts((prev) =>
         prev.map((a) => (a._id === id ? { ...a, status } : a))
       );
@@ -109,20 +103,23 @@ export default function QuoraAccounts() {
   ====================== */
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Quora Accounts</h2>
+      {/* TITLE */}
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        Quora Accounts
+      </h2>
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-500/20 text-blue-300 p-3 rounded font-semibold">
+        <div className="bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 p-3 rounded font-semibold">
           Total: {total}
         </div>
-        <div className="bg-green-500/20 text-green-300 p-3 rounded font-semibold">
+        <div className="bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300 p-3 rounded font-semibold">
           Working: {working}
         </div>
-        <div className="bg-yellow-500/20 text-yellow-300 p-3 rounded font-semibold">
+        <div className="bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300 p-3 rounded font-semibold">
           Suspicious: {suspicious}
         </div>
-        <div className="bg-red-500/20 text-red-300 p-3 rounded font-semibold">
+        <div className="bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 p-3 rounded font-semibold">
           Not Working: {notWorking}
         </div>
       </div>
@@ -132,28 +129,33 @@ export default function QuoraAccounts() {
         placeholder="Search by User ID, Name or Email..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full md:w-1/2 p-2 rounded bg-gray-900 text-gray-200 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="
+          w-full md:w-1/2 p-2 rounded
+          bg-white text-gray-900 border border-gray-300
+          dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700
+          focus:outline-none focus:ring-2 focus:ring-blue-500
+        "
       />
 
       {/* TABLE */}
-      <div className="bg-gray-800 rounded shadow overflow-x-auto">
-        <table className="w-full text-sm text-gray-200">
-          <thead>
-            <tr className="border-b border-gray-700 text-gray-300">
-              <th className="py-2 px-3">Sr</th>
-              <th className="py-2 px-3">User ID</th>
-              <th className="py-2 px-3">Name 1</th>
-              <th className="py-2 px-3">Email 1</th>
-              <th className="py-2 px-3">Pass 1</th>
-              <th className="py-2 px-3">Name 2</th>
-              <th className="py-2 px-3">Email 2</th>
-              <th className="py-2 px-3">Pass 2</th>
-              <th className="py-2 px-3">Status</th>
-              <th className="py-2 px-3 text-center">CTR Done</th>
+      <div className="bg-white dark:bg-gray-800 rounded shadow overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-100 dark:bg-gray-700">
+            <tr className="text-gray-700 dark:text-gray-100">
+              <th className="py-2 px-1 text-left">Sr</th>
+              <th className="py-2 px-1 text-left">User ID</th>
+              <th className="py-2 px-1 text-left">Name 1</th>
+              <th className="py-2 px-1 text-left">Email 1</th>
+              <th className="py-2 px-1 text-left">Pass 1</th>
+              <th className="py-2 px-1 text-left">Name 2</th>
+              <th className="py-2 px-1 text-left">Email 2</th>
+              <th className="py-2 px-1 text-left">Pass 2</th>
+              <th className="py-2 px-1 text-left">Status</th>
+              <th className="py-2 px-1 text-center">CTR Done</th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="text-gray-800 dark:text-gray-100">
             {loading ? (
               <tr>
                 <td colSpan="10" className="py-6 text-center text-gray-400">
@@ -170,23 +172,30 @@ export default function QuoraAccounts() {
               filtered.map((acc, i) => (
                 <tr
                   key={acc._id}
-                  className="border-b border-gray-700 hover:bg-gray-700/40 transition"
+                  className="
+                    border-b border-gray-200 dark:border-gray-700
+                    hover:bg-gray-100 dark:hover:bg-gray-700/60
+                  "
                 >
-                  <td className="py-2 px-3">{i + 1}</td>
-                  <td className="py-2 px-3">{acc.userId}</td>
-                  <td className="py-2 px-3">{acc.name1}</td>
-                  <td className="py-2 px-3">{acc.email1}</td>
-                  <td className="py-2 px-3">{acc.password1}</td>
-                  <td className="py-2 px-3">{acc.name2 || "—"}</td>
-                  <td className="py-2 px-3">{acc.email2 || "—"}</td>
-                  <td className="py-2 px-3">{acc.password2 || "—"}</td>
+                  <td className="py-2 px-1">{i + 1}</td>
+                  <td className="py-2 px-1">{acc.userId}</td>
+                  <td className="py-2 px-1">{acc.name1}</td>
+                  <td className="py-2 px-1">{acc.email1}</td>
+                  <td className="py-2 px-1">{acc.password1}</td>
+                  <td className="py-2 px-1">{acc.name2 || "—"}</td>
+                  <td className="py-2 px-1">{acc.email2 || "—"}</td>
+                  <td className="py-2 px-1">{acc.password2 || "—"}</td>
 
                   {/* STATUS */}
-                  <td className="py-2 px-3">
+                  <td className="py-2 px-1">
                     <select
                       value={acc.status}
                       onChange={(e) => changeStatus(acc._id, e.target.value)}
-                      className="bg-gray-900 text-gray-200 border border-gray-700 rounded px-2 py-1 text-xs"
+                      className="
+                        bg-white text-gray-900 border border-gray-300
+                        dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700
+                        rounded px-1 py-1 text-xs
+                      "
                     >
                       <option value="working">Working</option>
                       <option value="suspicious">Suspicious</option>
@@ -195,7 +204,7 @@ export default function QuoraAccounts() {
                   </td>
 
                   {/* CTR */}
-                  <td className="py-2 px-3 text-center">
+                  <td className="py-2 px-1 text-center">
                     <input
                       type="checkbox"
                       checked={ctrDoneMap[acc._id] === true}

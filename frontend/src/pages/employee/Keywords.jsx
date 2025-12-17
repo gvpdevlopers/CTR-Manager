@@ -19,8 +19,6 @@ export default function Keywords() {
       setError("");
 
       const res = await API.get(KEYWORD_API);
-
-      // ✅ Directly store keywords
       setKeywords(res.data || []);
     } catch (err) {
       console.error(err);
@@ -43,15 +41,23 @@ export default function Keywords() {
   return (
     <div className="space-y-6">
       {/* TITLE */}
-      <h2 className="text-2xl font-bold text-white">Keywords</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        Keywords
+      </h2>
 
       {/* FILTER */}
       <div className="flex items-center gap-3">
-        <span className="text-white">Filter:</span>
+        <span className="text-gray-900 dark:text-white">Filter:</span>
+
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="bg-gray-900 text-white border border-gray-600 rounded px-3 py-2"
+          className="
+            px-3 py-2 rounded
+            bg-white text-gray-900 border border-gray-300
+            dark:bg-gray-900 dark:text-gray-200 dark:border-gray-600
+            focus:outline-none focus:ring-2 focus:ring-blue-500
+          "
         >
           <option value="all">All</option>
           <option value="instagram">Instagram</option>
@@ -62,26 +68,35 @@ export default function Keywords() {
       </div>
 
       {/* LIST */}
-      <div className="bg-gray-800 p-5 rounded">
-        <h3 className="font-semibold text-white mb-3">All Keywords</h3>
+      <div className="bg-white dark:bg-gray-800 p-5 rounded shadow">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+          All Keywords
+        </h3>
 
         {loading ? (
-          <p className="text-gray-400">Loading keywords…</p>
+          <p className="text-gray-500 dark:text-gray-400">Loading keywords…</p>
         ) : error ? (
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-600 dark:text-red-400">{error}</p>
         ) : filteredKeywords.length === 0 ? (
-          <p className="text-gray-400">No keywords available.</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            No keywords available.
+          </p>
         ) : (
           <ul className="space-y-2">
             {filteredKeywords.map((item) => (
               <li
                 key={item._id}
-                className="flex justify-between items-center bg-gray-900 px-4 py-2 rounded text-white"
+                className="
+                  flex justify-between items-center
+                  px-4 py-2 rounded
+                  bg-gray-100 text-gray-900
+                  dark:bg-gray-900 dark:text-gray-100
+                "
               >
                 <span>{item.keyword}</span>
-                <span className="text-xs text-gray-400 uppercase">
+                {/* <span className="text-xs uppercase opacity-70">
                   {item.platform}
-                </span>
+                </span> */}
               </li>
             ))}
           </ul>

@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, EyeSlashIcon, TrashIcon } from "@heroicons/react/24/outline";
 
+/* ================= INPUT ================= */
 const inputClass =
-  "w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full rounded px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500 " +
+  "bg-white text-gray-900 border-gray-300 placeholder-gray-400 " +
+  "dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:placeholder-gray-500";
 
 export default function AdminEmployees() {
   const [employees, setEmployees] = useState([]);
@@ -83,10 +86,25 @@ export default function AdminEmployees() {
       await API.put(`/admin/employees/${id}/reset-password`, {
         newPassword,
       });
-
       showToast("success", "Password reset successful");
     } catch {
       showToast("error", "Password reset failed");
+    }
+  };
+
+  /* ================= DELETE ================= */
+  const deleteEmployee = async (id, name) => {
+    const confirmDelete = confirm(
+      `Are you sure you want to delete "${name}"?\nThis action cannot be undone.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await API.delete(`/admin/employees/${id}`);
+      showToast("success", "Employee deleted");
+      fetchEmployees();
+    } catch {
+      showToast("error", "Failed to delete employee");
     }
   };
 
@@ -96,23 +114,18 @@ export default function AdminEmployees() {
       {/* TOAST */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-2 rounded shadow-lg ${
-            toast.type === "success"
-              ? "bg-green-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
+          className={`fixed top-5 right-5 z-50 px-4 py-2 rounded shadow-lg text-white
+            ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
         >
-          <span className="text-lg">
-            {toast.type === "success" ? "✅" : "❌"}
-          </span>
-          <span className="text-sm font-medium">{toast.text}</span>
-          <button onClick={() => setToast(null)}>✕</button>
+          {toast.text}
         </div>
       )}
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Employees Management</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Employees Management
+        </h2>
 
         <button
           onClick={() => setShowModal(true)}
@@ -123,10 +136,19 @@ export default function AdminEmployees() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-gray-800 rounded shadow overflow-x-auto">
-        <table className="w-full text-sm text-white">
-          <thead className="border-b border-gray-700">
-            <tr>
+      <div
+        className="rounded-lg border overflow-x-auto
+   bg-white border-gray-200
+   dark:bg-gray-800 dark:border-gray-700"
+      >
+        <table className="w-full text-sm">
+          <thead
+            className="
+  bg-gray-100 border-b border-gray-200
+   dark:bg-gray-900 dark:border-gray-700
+ "
+          >
+            <tr className="text-left text-gray-700 dark:text-gray-200">
               <th className="p-3">Sr</th>
               <th>Full Name</th>
               <th>Username</th>
@@ -144,7 +166,7 @@ export default function AdminEmployees() {
               </tr>
             ) : employees.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center py-6 text-gray-400">
+                <td colSpan="5" className="text-center py-6 text-gray-500">
                   No employees found
                 </td>
               </tr>
@@ -152,35 +174,65 @@ export default function AdminEmployees() {
               employees.map((emp, i) => (
                 <tr
                   key={emp._id}
-                  className="border-b border-gray-700 hover:bg-gray-700"
+                  className={`
+    border-b border-gray-200
+    bg-gray-50
+    hover:bg-gray-100
+
+    dark:border-gray-700
+    dark:bg-gray-800
+    dark:hover:bg-gray-700
+
+    transition
+  `}
                 >
-                  <td className="p-3">{i + 1}</td>
-                  <td>{emp.fullName}</td>
-                  <td>{emp.username}</td>
+                  <td className="p-3 text-gray-900 dark:text-gray-100">
+                    {i + 1}
+                  </td>
+                  <td className="text-gray-900 dark:text-gray-100">
+                    {emp.fullName}
+                  </td>
+                  <td className="text-gray-900 dark:text-gray-100">
+                    {emp.username}
+                  </td>
+
                   <td>
                     <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        emp.isActive
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-red-500/20 text-red-400"
-                      }`}
+                      className={`px-2 py-1 rounded text-xs
+                        ${
+                          emp.isActive
+                            ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300"
+                            : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300"
+                        }`}
                     >
                       {emp.isActive ? "Active" : "Blocked"}
                     </span>
                   </td>
+
                   <td className="text-right space-x-2 p-3">
                     <button
                       onClick={() => toggleStatus(emp._id)}
-                      className="border px-3 py-1 rounded text-blue-400"
+                      className="border px-3 py-1 rounded text-blue-600 border-blue-600 hover:bg-blue-50
+                        dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-500/10"
                     >
                       {emp.isActive ? "Deactivate" : "Activate"}
                     </button>
 
                     <button
                       onClick={() => resetPassword(emp._id)}
-                      className="border px-3 py-1 rounded text-orange-400"
+                      className="border px-3 py-1 rounded text-orange-600 border-orange-600 hover:bg-orange-50
+                        dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-500/10"
                     >
                       Reset Password
+                    </button>
+
+                    <button
+                      onClick={() => deleteEmployee(emp._id, emp.fullName)}
+                      className="border px-2 py-1 rounded text-red-600 border-red-600 hover:bg-red-50
+                        dark:text-red-400 dark:border-red-400 dark:hover:bg-red-500/10"
+                      title="Delete Employee"
+                    >
+                      <TrashIcon className="h-4 w-4 inline" />
                     </button>
                   </td>
                 </tr>
@@ -193,10 +245,12 @@ export default function AdminEmployees() {
       {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded w-96 space-y-4">
-            <h3 className="text-lg font-semibold text-white">
-              Add New Employee
-            </h3>
+          <div
+            className="rounded p-6 w-96 space-y-4
+            bg-white text-gray-900
+            dark:bg-gray-800 dark:text-white"
+          >
+            <h3 className="text-lg font-semibold">Add New Employee</h3>
 
             <input
               placeholder="Full Name"
@@ -212,7 +266,7 @@ export default function AdminEmployees() {
               onChange={(e) => setForm({ ...form, username: e.target.value })}
             />
 
-            {/* PASSWORD WITH EYE */}
+            {/* PASSWORD */}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -221,9 +275,8 @@ export default function AdminEmployees() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
               />
-              {/* Eye Icon */}
               <div
-                className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500 dark:text-gray-300"
+                className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
@@ -232,19 +285,13 @@ export default function AdminEmployees() {
                   <EyeIcon className="h-5 w-5" />
                 )}
               </div>
-              {/* <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2 text-gray-400"
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button> */}
             </div>
 
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border border-gray-500 rounded text-white"
+                className="px-4 py-2 border rounded
+                  border-gray-300 dark:border-gray-600"
               >
                 Cancel
               </button>

@@ -25,28 +25,28 @@ exports.createRedditAccount = async (req, res) => {
 };
 
 // ✅ EMPLOYEE — GET OWN
-exports.getMyRedditAccounts = async (req, res) => {
-  try {
-    const accounts = await RedditAccount.find({
-      ownerEmployeeId: req.user._id,
-    }).sort({ createdAt: -1 });
+// exports.getMyRedditAccounts = async (req, res) => {
+//   try {
+//     const accounts = await RedditAccount.find({
+//       ownerEmployeeId: req.user._id,
+//     }).sort({ createdAt: -1 });
 
-    res.json(accounts);
-  } catch {
-    res.status(500).json({ message: "Fetch failed" });
-  }
-};
+//     res.json(accounts);
+//   } catch {
+//     res.status(500).json({ message: "Fetch failed" });
+//   }
+// };
 
-// ✅ ADMIN — GET ALL
+// ✅ ADMIN + EMPLOYEE — GET ALL (GLOBAL)
 exports.getAllRedditAccounts = async (req, res) => {
   try {
-    const accounts = await RedditAccount.find().populate(
-      "ownerEmployeeId",
-      "fullName username"
-    );
+    const accounts = await RedditAccount.find()
+      .populate("ownerEmployeeId", "fullName username role")
+      .sort({ createdAt: -1 });
 
     res.json(accounts);
-  } catch {
+  } catch (err) {
+    console.error("Reddit GET error:", err);
     res.status(500).json({ message: "Fetch failed" });
   }
 };
