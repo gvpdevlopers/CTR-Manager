@@ -15,10 +15,14 @@ const keywordRoutes = require("./routes/keywordRoutes");
 const taskExecutionRoutes = require("./routes/taskExecutionRoutes");
 const ctrRoutes = require("./routes/ctr.routes");
 
+const { startRedditCTRCron } = require("./cron/redditCTR.cron");
+
 const app = express();
 
 // Connect Database
 connectDB();
+
+startRedditCTRCron();
 
 // Middlewares
 app.use(cors());
@@ -35,6 +39,8 @@ app.use("/api/bhw-accounts", bhwAccountRoutes);
 app.use("/api/keywords", keywordRoutes);
 app.use("/api/task-executions", taskExecutionRoutes);
 app.use("/api/ctr", ctrRoutes);
+app.use("/api/reddit", require("./routes/reddit.routes"));
+app.use("/api/admin/reddit", require("./routes/admin.reddit.routes"));
 
 // Test Route
 app.get("/", (req, res) => {

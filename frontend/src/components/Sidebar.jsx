@@ -42,6 +42,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               Employees
             </NavLink>
 
+            <NavLink to="/admin/reddit-ctr" className={linkClass}>
+              Reddit CTR
+            </NavLink>
+
             <NavLink to="/admin/add-accounts" className={linkClass}>
               Add Accounts
             </NavLink>
