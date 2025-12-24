@@ -26,7 +26,9 @@ import AdminBhwAccounts from "./pages/admin/AdminBhwAccounts";
 import AdminEmployees from "./pages/admin/AdminEmployees";
 import AdminDailyTasks from "./pages/admin/AdminDailyTasks";
 import AdminKeywords from "./pages/admin/AdminKeywords";
+import InstagramCTR from "./pages/admin/InstagramCTR";
 import RedditCTR from "./pages/admin/RedditCTR";
+import QuoraCTR from "./pages/admin/QuoraCTR";
 // import Employees from "./pages/admin/Employees";
 // import PlatformAccounts from "./pages/admin/PlatformAccounts";
 // import PlatformTasks from "./pages/admin/PlatformTasks";
@@ -52,7 +54,9 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="employees" element={<AdminEmployees />} />
               <Route path="add-accounts" element={<AdminAddAccounts />} />
+              <Route path="instagram-ctr" element={<InstagramCTR />} />
               <Route path="reddit-ctr" element={<RedditCTR />} />
+              <Route path="quora-ctr" element={<QuoraCTR />} />
               <Route path="instagram" element={<AdminInstagramAccounts />} />
               <Route path="reddit" element={<AdminRedditAccounts />} />
               <Route path="quora" element={<AdminQuoraAccounts />} />

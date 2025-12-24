@@ -33,6 +33,15 @@ exports.getTodayRedditCTRStatus = async (req, res) => {
       lastVerifiedAt: check.updatedAt,
     }));
 
+    console.log("📤 CTR STATUS API RESPONSE:");
+    response.forEach((row) => {
+      console.log({
+        usernames: row.usernames,
+        status: row.status,
+        actual: row.actual,
+      });
+    });
+
     res.json(response);
   } catch (error) {
     console.error("Admin CTR fetch error:", error);
@@ -42,12 +51,11 @@ exports.getTodayRedditCTRStatus = async (req, res) => {
 
 exports.verifyRedditNow = async (req, res) => {
   try {
-    const result = await verifyRedditCTR({ manual: true });
+    await verifyRedditCTR(null, { manual: true });
 
-    res.json({
-      message: "Reddit CTR verification completed",
-      result,
-    });
+    console.log("Manual verification completed");
+
+    res.json({ message: "Verification completed" });
   } catch (err) {
     console.error("Manual verify error:", err);
     res.status(500).json({ message: "Verification failed" });

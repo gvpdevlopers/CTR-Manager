@@ -52,6 +52,7 @@ export default function QuoraAccounts() {
     try {
       await API.post("/ctr/mark-done", {
         accountId,
+        platform: "quora",
         date: new Date().toISOString().slice(0, 10),
       });
 

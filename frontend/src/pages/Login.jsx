@@ -18,7 +18,13 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-    const res = await login({ username, password });
+    const cleanUsername = username.trim();
+    const cleanPassword = password.replace(/\s/g, "");
+
+    const res = await login({
+      username: cleanUsername,
+      password: cleanPassword,
+    });
 
     setLoading(false);
 

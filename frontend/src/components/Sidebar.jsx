@@ -42,8 +42,16 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               Employees
             </NavLink>
 
+            <NavLink to="/admin/instagram-ctr" className={linkClass}>
+              Instagram CTR
+            </NavLink>
+
             <NavLink to="/admin/reddit-ctr" className={linkClass}>
               Reddit CTR
+            </NavLink>
+
+            <NavLink to="/admin/quora-ctr" className={linkClass}>
+              Quora CTR
             </NavLink>
 
             <NavLink to="/admin/add-accounts" className={linkClass}>

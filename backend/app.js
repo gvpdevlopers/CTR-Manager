@@ -23,6 +23,7 @@ const app = express();
 connectDB();
 
 startRedditCTRCron();
+require("./cron/instagramCTR.cron");
 
 // Middlewares
 app.use(cors());
@@ -41,6 +42,11 @@ app.use("/api/task-executions", taskExecutionRoutes);
 app.use("/api/ctr", ctrRoutes);
 app.use("/api/reddit", require("./routes/reddit.routes"));
 app.use("/api/admin/reddit", require("./routes/admin.reddit.routes"));
+app.use("/api/admin/instagram", require("./routes/adminInstagram.routes"));
+app.use(
+  "/api/admin/quora/dashboard",
+  require("./routes/admin.quora.dashboard")
+);
 
 // Test Route
 app.get("/", (req, res) => {

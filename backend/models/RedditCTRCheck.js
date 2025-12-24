@@ -29,12 +29,23 @@ const redditCTRCheckSchema = new mongoose.Schema(
     },
 
     actual: {
-      user1Comments: { type: Number, default: 0 },
-      user1Posts: { type: Number, default: 0 },
-      user2Comments: { type: Number, default: 0 },
-      user2Posts: { type: Number, default: 0 },
-    },
+      breakdown: {
+        user1: {
+          comments24h: { type: Number, default: 0 },
+          posts24h: { type: Number, default: 0 },
+        },
+        user2: {
+          comments24h: { type: Number, default: 0 },
+          posts24h: { type: Number, default: 0 },
+        },
+      },
 
+      comments24h: { type: Number, default: 0 },
+      commentsRequired: { type: Number, default: 0 },
+
+      postDone: { type: Boolean, default: false },
+      postValidTill: { type: Date, default: null },
+    },
     status: {
       type: String,
       enum: ["done", "suspicious", "not_done"],

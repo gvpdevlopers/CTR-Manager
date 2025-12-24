@@ -1,14 +1,22 @@
+// models/QuoraAccount.js
 const mongoose = require("mongoose");
 
 const quoraAccountSchema = new mongoose.Schema(
   {
+    /* ======================
+       EXISTING FIELDS (DO NOT CHANGE)
+    ====================== */
+
     ownerEmployeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-    userId: { type: String, required: true },
+    userId: {
+      type: String,
+      required: true,
+    },
 
     // First User
     name1: { type: String, required: true },
@@ -26,9 +34,54 @@ const quoraAccountSchema = new mongoose.Schema(
       default: "working",
     },
 
-    // Automation-ready
-    lastCheckedAt: { type: Date, default: null },
-    ctrDone: { type: Boolean, default: false },
+    lastCheckedAt: {
+      type: Date,
+      default: null,
+    },
+
+    ctrDone: {
+      type: Boolean,
+      default: false,
+    },
+
+    /* ======================
+       NEW FIELDS (NON-BREAKING)
+       FOR QUORA CTR VERIFICATION
+    ====================== */
+
+    profileUrl: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    username: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    // BASELINE SNAPSHOT (Apify)
+    baselineAnswersCount: {
+      type: Number,
+      default: null,
+    },
+
+    baselineLastAnswerDate: {
+      type: Date,
+      default: null,
+    },
+
+    baselineCapturedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // INTERNAL FLAGS (SAFE EXTENSION)
+    verificationEnabled: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

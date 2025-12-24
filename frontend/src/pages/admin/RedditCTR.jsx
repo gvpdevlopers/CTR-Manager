@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import API from "../../services/api"; // your axios instance
+import API from "../../services/api";
 
 export default function RedditCTR() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // filters
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
+
+  const COMMENT_REQUIRED_TODAY = 2;
 
   /* =========================
      FETCH DATA
@@ -15,10 +16,18 @@ export default function RedditCTR() {
   const fetchCTRStatus = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/admin/reddit/ctr-status");
-      setData(res.data || []);
+
+      // UNCOMMENT THIS AFTER FINISH PROJECT
+
+      // const res = await API.get("/admin/reddit/ctr-status");
+      // console.log(" FRONTEND RAW DATA:", res.data);
+      // setData(res.data || []);
     } catch (err) {
       console.error("Failed to load Reddit CTR data", err);
+
+      if (err.code === "ERR_NETWORK") {
+        alert("Backend not reachable. Please refresh after a moment.");
+      }
     } finally {
       setLoading(false);
     }
@@ -34,10 +43,12 @@ export default function RedditCTR() {
   const filteredData = data.filter((row) => {
     const matchesStatus = statusFilter === "all" || row.status === statusFilter;
 
+    const q = search.toLowerCase();
+
     const matchesSearch =
-      row.usernames.user1.toLowerCase().includes(search.toLowerCase()) ||
-      row.usernames.user2.toLowerCase().includes(search.toLowerCase()) ||
-      row.clickedBy?.name?.toLowerCase().includes(search.toLowerCase());
+      row.usernames.user1?.toLowerCase().includes(q) ||
+      row.usernames.user2?.toLowerCase().includes(q) ||
+      row.clickedBy?.name?.toLowerCase().includes(q);
 
     return matchesStatus && matchesSearch;
   });
@@ -45,14 +56,13 @@ export default function RedditCTR() {
   /* =========================
      VERIFY NOW
   ========================= */
-
   const verifyNow = async () => {
     if (!window.confirm("Verify Reddit CTR now?")) return;
 
     try {
       setLoading(true);
       await API.post("/admin/reddit/verify-now");
-      await fetchCTRStatus(); // refresh table
+      await fetchCTRStatus();
     } catch {
       alert("Verification failed");
     } finally {
@@ -140,60 +150,81 @@ export default function RedditCTR() {
               </tr>
             ) : filteredData.length === 0 ? (
               <tr>
-                <td
-                  colSpan="6"
-                  className="text-center py-10 text-gray-500 dark:text-gray-400"
-                >
+                <td colSpan="6" className="text-center py-10 text-gray-500">
                   No records found
                 </td>
               </tr>
             ) : (
-              filteredData.map((row) => (
-                <tr
-                  key={row.ctrCheckId}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{row.usernames.user1}</div>
-                    <div className="text-xs text-gray-500">
-                      {row.usernames.user2}
-                    </div>
-                  </td>
+              filteredData.map((row) => {
+                return (
+                  <tr
+                    key={row.ctrCheckId}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{row.usernames.user1}</div>
+                      <div className="text-xs text-gray-500">
+                        {row.usernames.user2}
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        statusStyles[row.status]
-                      }`}
-                    >
-                      {row.status.replace("_", " ").toUpperCase()}
-                    </span>
-                  </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          statusStyles[row.status]
+                        }`}
+                      >
+                        {row.status.replace("_", " ").toUpperCase()}
+                      </span>
+                    </td>
 
-                  <td className="px-4 py-3 text-center">
-                    {row.actual?.user1Comments || 0} /{" "}
-                    {row.actual?.user2Comments || 0}
-                  </td>
+                    {/* COMMENTS */}
+                    <td className="px-4 py-3 text-center font-medium">
+                      {row.actual?.comments24h ?? 0} /{" "}
+                      {row.actual?.commentsRequired ?? 2}
+                      <div className="text-xs text-gray-500">
+                        {row.actual?.breakdown?.user1?.comments24h ?? 0} +{" "}
+                        {row.actual?.breakdown?.user2?.comments24h ?? 0}
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-3 text-center">
-                    {row.actual?.user1Posts || 0} /{" "}
-                    {row.actual?.user2Posts || 0}
-                  </td>
+                    {/* POSTS */}
+                    <td className="px-4 py-3 text-center">
+                      {row.actual?.postValidTill ? (
+                        <span className="relative group cursor-help font-medium text-green-600">
+                          1 / 1
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition z-50">
+                            Post valid till{" "}
+                            {new Date(
+                              row.actual.postValidTill
+                            ).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">0 / 1</span>
+                      )}
+                    </td>
 
-                  <td className="px-4 py-3">
-                    <div className="font-medium">
-                      {row.clickedBy?.name || "—"}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {row.clickedBy?.email}
-                    </div>
-                  </td>
+                    {/* CTR DONE BY */}
+                    <td className="px-4 py-3">
+                      <div className="font-medium">
+                        {row.clickedBy?.name || "—"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {row.clickedBy?.email}
+                      </div>
+                    </td>
 
-                  <td className="px-4 py-3 text-xs text-gray-500">
-                    {new Date(row.clickedAt).toLocaleString()}
-                  </td>
-                </tr>
-              ))
+                    <td className="px-4 py-3 text-xs text-gray-500">
+                      {new Date(row.clickedAt).toLocaleString()}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

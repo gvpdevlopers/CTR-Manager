@@ -24,7 +24,7 @@ export default function RedditAccounts() {
 
   const fetchTodayCtr = async () => {
     try {
-      const res = await API.get("/ctr/today");
+      const res = await API.get("/reddit/ctr/my-today");
       const map = {};
       res.data.forEach((row) => {
         map[row.accountId] = true;
@@ -57,10 +57,11 @@ export default function RedditAccounts() {
 
       setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
     } catch (err) {
-      if (err.response?.status === 400) {
+      if (err.response?.status === 400 || err.response?.status === 409) {
         setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
         return;
       }
+
       console.error("CTR ERROR:", err);
     }
   };
@@ -217,11 +218,15 @@ export default function RedditAccounts() {
                     <input
                       type="checkbox"
                       checked={ctrDoneMap[acc._id] === true}
-                      disabled={ctrDoneMap[acc._id] === true}
+                      disabled={
+                        acc.status !== "working" || ctrDoneMap[acc._id] === true
+                      }
                       onChange={() => markCtrDone(acc._id)}
                       className="w-4 h-4 accent-green-600 disabled:opacity-50"
                       title={
-                        ctrDoneMap[acc._id]
+                        acc.status !== "working"
+                          ? "Account is not working"
+                          : ctrDoneMap[acc._id]
                           ? "CTR already marked"
                           : "Mark CTR done"
                       }

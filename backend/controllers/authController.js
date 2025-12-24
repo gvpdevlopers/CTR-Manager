@@ -2,44 +2,77 @@ const User = require("../models/User");
 const { hashPassword, comparePassword } = require("../utils/hashPassword");
 const generateToken = require("../utils/generateToken");
 
-// ✅ LOGIN (Admin + Employee)
+// ===========================
+// LOGIN (Admin + Employee)
+// ===========================
 exports.loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    let { username, password } = req.body;
+
+    // Sanitize input
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ message: "Username and password required" });
+    }
+
+    username = username.trim();
+    password = password.trim();
+
+    // console.log("LOGIN ATTEMPT:", username);
+    // console.log("PASSWORD LENGTH:", password.length);
 
     const user = await User.findOne({ username });
+    // console.log("USER FOUND:", user ? user.role : "none");
 
     if (!user || !user.isActive) {
-      return res
-        .status(401)
-        .json({ message: "Invalid credentials or user inactive" });
+      // console.log("FAILED: user missing or inactive");
+      return res.status(401).json({
+        message: "Invalid credentials or user inactive",
+      });
     }
 
     const isMatch = await comparePassword(password, user.passwordHash);
+    // console.log("PASSWORD MATCH:", isMatch);
 
     if (!isMatch) {
+      // console.log("FAILED: password mismatch");
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    const token = generateToken(user);
+    console.log("TOKEN GENERATED");
 
     user.lastLogin = new Date();
     await user.save();
 
-    res.json({
+    return res.json({
       _id: user._id,
       fullName: user.fullName,
       username: user.username,
       role: user.role,
-      token: generateToken(user),
+      token,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("LOGIN ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-// ✅ ADMIN CREATES EMPLOYEE
+// ===========================
+// ADMIN CREATES EMPLOYEE
+// ===========================
 exports.createEmployee = async (req, res) => {
   try {
-    const { fullName, username, password } = req.body;
+    let { fullName, username, password } = req.body;
+
+    if (!fullName || !username || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    username = username.trim();
+    password = password.replace(/\s/g, "");
+    fullName = fullName.trim();
 
     const exists = await User.findOne({ username });
     if (exists) {
@@ -56,7 +89,7 @@ exports.createEmployee = async (req, res) => {
       createdByAdminId: req.user._id,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Employee created successfully",
       employee: {
         id: user._id,
@@ -65,6 +98,7 @@ exports.createEmployee = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("CREATE EMPLOYEE ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };

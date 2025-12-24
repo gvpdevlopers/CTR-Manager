@@ -63,3 +63,20 @@ exports.markCTRDone = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.getMyTodayCTR = async (req, res) => {
+  try {
+    const employeeId = req.user._id;
+    const today = new Date().toISOString().split("T")[0];
+
+    const record = await RedditCTRCheck.findOne({
+      employeeId,
+      date: today,
+    }).select("redditAccountId status");
+
+    res.json(record || null);
+  } catch (err) {
+    console.error("My CTR fetch error:", err);
+    res.status(500).json({ message: "Failed to fetch today CTR" });
+  }
+};
