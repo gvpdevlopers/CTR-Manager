@@ -17,11 +17,9 @@ export default function RedditCTR() {
     try {
       setLoading(true);
 
-      // UNCOMMENT THIS AFTER FINISH PROJECT
-
-      // const res = await API.get("/admin/reddit/ctr-status");
-      // console.log(" FRONTEND RAW DATA:", res.data);
-      // setData(res.data || []);
+      const res = await API.get("/admin/reddit/ctr-status");
+      console.log(" FRONTEND RAW DATA:", res.data);
+      setData(res.data || []);
     } catch (err) {
       console.error("Failed to load Reddit CTR data", err);
 

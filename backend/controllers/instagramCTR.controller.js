@@ -39,15 +39,15 @@ exports.runInstagramCTRCheck = async (req, res) => {
     };
 
     // 4️⃣ Decide status
-    let status = "Not Working";
+    // let status = "Not Working";
 
-    if (ctr) {
-      if (ctr.status === "suspicious") {
-        status = "Suspicious";
-      } else {
-        status = "Working";
-      }
-    }
+    // if (ctr) {
+    //   if (ctr.status === "suspicious") {
+    //     status = "Suspicious";
+    //   } else {
+    //     status = "Working";
+    //   }
+    // }
 
     // 5️⃣ Save snapshot
     const record = await InstagramCTRCheck.create({

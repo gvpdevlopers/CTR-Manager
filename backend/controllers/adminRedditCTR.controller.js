@@ -33,7 +33,7 @@ exports.getTodayRedditCTRStatus = async (req, res) => {
       lastVerifiedAt: check.updatedAt,
     }));
 
-    console.log("📤 CTR STATUS API RESPONSE:");
+    // console.log("📤 CTR STATUS API RESPONSE:");
     response.forEach((row) => {
       console.log({
         usernames: row.usernames,

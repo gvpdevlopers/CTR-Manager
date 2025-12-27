@@ -78,4 +78,26 @@ router.delete("/reset-today", protect, async (req, res) => {
   }
 });
 
+router.get("/today", protect, async (req, res) => {
+  try {
+    const employeeId = req.user._id;
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const executions = await TaskExecution.find({
+      employeeId,
+      taskDate: { $gte: start, $lte: end },
+    }).select("accountId");
+
+    res.json(executions);
+  } catch (err) {
+    console.error("❌ FETCH TODAY ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch executions" });
+  }
+});
+
 module.exports = router;

@@ -29,7 +29,7 @@ cron.schedule("0 0 1 * * *", async () => {
     const todayStr = getTodayDate();
     const yesterdayStr = getDateNDaysAgo(1);
 
-    // ✅ DEFINE start & end (THIS WAS MISSING)
+    //  DEFINE start & end (THIS WAS MISSING)
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
@@ -38,7 +38,7 @@ cron.schedule("0 0 1 * * *", async () => {
 
     console.log("🕒 Date range:", start.toISOString(), "→", end.toISOString());
 
-    // ✅ SUPPORT OLD + NEW SYSTEM
+    //  SUPPORT OLD + NEW SYSTEM
     const executions = await TaskExecution.find({
       platform: "instagram",
       taskDate: { $gte: start, $lte: end },
@@ -57,6 +57,8 @@ cron.schedule("0 0 1 * * *", async () => {
         console.warn("⚠️ accountId missing in TaskExecution");
         continue;
       }
+
+      const employeeSubmittedAt = exec.createdAt || null;
 
       console.log("➡️ Verifying:", account.username);
 
@@ -81,9 +83,21 @@ cron.schedule("0 0 1 * * *", async () => {
       let status = "not_done";
       const failureReasons = [];
 
-      if (deltas.followers >= 2) {
+      const followerChange = deltas.followers;
+      const postChange = deltas.posts;
+
+      // Rule 1: If employee confirmed work → done
+      if (employeeSubmittedAt) {
         status = "done";
-      } else if (deltas.followers < 0) {
+      }
+
+      // Rule 2: Real activity → done
+      if (followerChange > 0 || postChange > 0) {
+        status = "done";
+      }
+
+      // Rule 3: Negative trend → suspicious (overrides done)
+      if (followerChange < 0) {
         status = "suspicious";
         failureReasons.push("Followers dropped");
       }
@@ -98,6 +112,7 @@ cron.schedule("0 0 1 * * *", async () => {
             instagramAccountId: account._id,
             username: account.username,
             employeeId: exec.employeeId?._id,
+            employeeSubmittedAt,
 
             snapshot: {
               followers: data.followersCount,

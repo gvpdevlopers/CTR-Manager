@@ -3,36 +3,31 @@ const PlatformTask = require("../models/PlatformTask");
 
 exports.markTaskDone = async (req, res) => {
   try {
-    const { accountId, accountModel, taskId, platform } = req.body;
-
+    const { accountId, platform = "instagram" } = req.body;
     const employeeId = req.user._id;
-    const today = new Date().toISOString().split("T")[0];
 
-    // Validate task exists
-    const task = await PlatformTask.findById(taskId);
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
+    const taskDate = new Date();
+    taskDate.setHours(0, 0, 0, 0);
 
-    const execution = await TaskExecution.create({
+    const exists = await TaskExecution.findOne({
       employeeId,
       accountId,
-      accountModel,
-      taskId,
       platform,
-      date: today,
+      taskDate,
     });
 
-    res.status(201).json({
-      message: "CTR marked as done",
-      execution,
-    });
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(409).json({ message: "CTR already marked for today" });
+    if (!exists) {
+      await TaskExecution.create({
+        employeeId,
+        accountId,
+        platform,
+        taskDate,
+      });
     }
 
-    console.error(error);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("❌ MARK DONE ERROR:", err);
     res.status(500).json({ message: "Failed to mark CTR" });
   }
 };

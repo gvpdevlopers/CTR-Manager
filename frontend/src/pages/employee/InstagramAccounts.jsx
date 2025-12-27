@@ -27,7 +27,7 @@ export default function InstagramAccounts() {
       const res = await API.get("/ctr/today");
       const map = {};
       res.data.forEach((row) => {
-        map[row.accountId] = true;
+        map[row.accountId.toString()] = true;
       });
       setCtrDoneMap(map);
     } catch {

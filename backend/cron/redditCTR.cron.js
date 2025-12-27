@@ -34,7 +34,7 @@ const runRedditCTRVerification = async () => {
 
 exports.startRedditCTRCron = () => {
   // Runs every 30 minutes
-  cron.schedule("*/30 * * * *", async () => {
+  cron.schedule("0 1 * * *", async () => {
     await runRedditCTRVerification();
   });
 };

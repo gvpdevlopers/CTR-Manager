@@ -175,7 +175,9 @@ export default function InstagramCTR() {
                   <td className="px-4 py-3 text-center">{row.following}</td>
                   <td className="px-4 py-3 text-center">{row.posts}</td>
 
-                  <td className="px-4 py-3">{row.ctrDoneBy || "—"}</td>
+                  <td className="px-4 py-3">
+                    {row.employeeId?.name || row.employeeId?.email || "—"}
+                  </td>
 
                   <td className="px-4 py-3 text-xs text-gray-500">
                     {row.verifiedAt

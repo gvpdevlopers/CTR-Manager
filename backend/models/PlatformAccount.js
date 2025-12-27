@@ -24,7 +24,7 @@ const platformAccountSchema = new mongoose.Schema(
       required: true,
     },
 
-    // ⚠️ DEV ONLY - AUTO REMOVED IN PRODUCTION
+    //  DEV ONLY - AUTO REMOVED IN PRODUCTION
     devPlatformPasswordEncrypted: {
       type: String,
       default: null,
