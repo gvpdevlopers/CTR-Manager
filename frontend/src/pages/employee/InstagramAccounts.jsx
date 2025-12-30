@@ -47,17 +47,10 @@ export default function InstagramAccounts() {
     if (ctrDoneMap[accountId]) return;
 
     try {
-      await API.post("/ctr/mark-done", {
-        accountId,
-        date: new Date().toISOString().slice(0, 10),
-      });
+      await API.post("/ctr/mark-done", { accountId });
 
       setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
     } catch (err) {
-      if (err.response?.status === 400) {
-        setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
-        return;
-      }
       console.error("CTR ERROR:", err);
     }
   };

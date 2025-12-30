@@ -9,26 +9,26 @@ exports.markTaskDone = async (req, res) => {
     const taskDate = new Date();
     taskDate.setHours(0, 0, 0, 0);
 
-    const exists = await TaskExecution.findOne({
-      employeeId,
-      accountId,
-      platform,
-      taskDate,
-    });
+    const taskId = "daily_ctr";
 
-    if (!exists) {
-      await TaskExecution.create({
-        employeeId,
-        accountId,
-        platform,
-        taskDate,
-      });
-    }
+    await TaskExecution.updateOne(
+      { employeeId, accountId, taskId, taskDate },
+      {
+        $setOnInsert: {
+          employeeId,
+          accountId,
+          platform,
+          taskId,
+          taskDate,
+        },
+      },
+      { upsert: true }
+    );
 
     return res.json({ success: true });
   } catch (err) {
     console.error("❌ MARK DONE ERROR:", err);
-    res.status(500).json({ message: "Failed to mark CTR" });
+    return res.status(500).json({ message: "Failed to mark CTR" });
   }
 };
 

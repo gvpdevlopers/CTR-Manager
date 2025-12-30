@@ -26,9 +26,14 @@ export default function RedditAccounts() {
     try {
       const res = await API.get("/reddit/ctr/my-today");
       const map = {};
-      res.data.forEach((row) => {
-        map[row.accountId] = true;
-      });
+      if (Array.isArray(res.data)) {
+        res.data.forEach((row) => {
+          if (row.redditAccountId) {
+            map[row.redditAccountId.toString()] = true;
+          }
+        });
+      }
+
       setCtrDoneMap(map);
     } catch {
       // silent

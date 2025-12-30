@@ -20,6 +20,13 @@ const taskExecutionSchema = new mongoose.Schema(
       default: "instagram",
     },
 
+    taskId: {
+      type: String,
+      required: true,
+      default: "daily_ctr",
+      index: true,
+    },
+
     taskDate: {
       type: Date,
       required: true,
@@ -37,6 +44,12 @@ const taskExecutionSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+
+//  Ensure uniqueness per employee + account + task + day
+taskExecutionSchema.index(
+  { employeeId: 1, accountId: 1, taskId: 1, taskDate: 1 },
+  { unique: true }
 );
 
 module.exports = mongoose.model("TaskExecution", taskExecutionSchema);

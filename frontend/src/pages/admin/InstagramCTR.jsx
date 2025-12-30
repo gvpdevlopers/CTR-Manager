@@ -124,8 +124,8 @@ export default function InstagramCTR() {
               <th className="px-4 py-3">Sr</th>
               <th className="px-4 py-3">Username</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-center">Following</th>
-              <th className="px-4 py-3 text-center">Posts</th>
+              <th className="px-4 py-3 text-center">Following (24h)</th>
+              <th className="px-4 py-3 text-center">Posts (15d)</th>
               <th className="px-4 py-3">CTR Done By</th>
               <th className="px-4 py-3">Time</th>
             </tr>
@@ -145,12 +145,12 @@ export default function InstagramCTR() {
                 </td>
               </tr>
             ) : (
-              filteredRows.map((row) => (
+              filteredRows.map((row, index) => (
                 <tr
-                  key={row.sr}
+                  key={row._id || index}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
-                  <td className="px-4 py-3">{row.sr}</td>
+                  <td className="px-4 py-3">{index + 1}</td>
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                     {row.username}
                   </td>
@@ -172,12 +172,13 @@ export default function InstagramCTR() {
                     </span>
                   </td>
 
-                  <td className="px-4 py-3 text-center">{row.following}</td>
+                  {/* <td className="px-4 py-3 text-center">{row.following}</td> */}
+                  <td className="px-4 py-3 text-center">
+                    {row.following > 0 ? `+${row.following}` : row.following}
+                  </td>
                   <td className="px-4 py-3 text-center">{row.posts}</td>
 
-                  <td className="px-4 py-3">
-                    {row.employeeId?.name || row.employeeId?.email || "—"}
-                  </td>
+                  <td className="px-4 py-3">{row.ctrDoneBy || "—"}</td>
 
                   <td className="px-4 py-3 text-xs text-gray-500">
                     {row.verifiedAt

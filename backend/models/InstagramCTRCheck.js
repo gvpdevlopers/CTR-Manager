@@ -16,7 +16,7 @@ const instagramCTRCheckSchema = new mongoose.Schema(
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
     },
 
     username: {
@@ -41,8 +41,14 @@ const instagramCTRCheckSchema = new mongoose.Schema(
       profilePic: { type: String },
     },
 
+    // deltas: {
+    //   followers: { type: Number, default: 0 },
+    //   posts: { type: Number, default: 0 },
+    // },
+
     deltas: {
       followers: { type: Number, default: 0 },
+      following: { type: Number, default: 0 },
       posts: { type: Number, default: 0 },
     },
 

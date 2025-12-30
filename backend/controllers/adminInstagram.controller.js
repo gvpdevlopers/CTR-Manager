@@ -19,7 +19,18 @@ exports.getAdminInstagramDashboard = async (req, res) => {
     /* =========================
        2️⃣ FETCH TODAY CTR
     ========================= */
-    const ctrChecks = await InstagramCTRCheck.find({ date: today }).lean();
+    const ctrChecks = await InstagramCTRCheck.find({ date: today })
+      .populate("employeeId", "fullName username email")
+      .exec();
+
+    console.log(
+      "CTR DEBUG:",
+      ctrChecks.map((c) => ({
+        id: c._id,
+        employeeId: c.employeeId,
+        type: typeof c.employeeId,
+      }))
+    );
 
     const ctrMap = {};
     ctrChecks.forEach((ctr) => {
@@ -54,15 +65,20 @@ exports.getAdminInstagramDashboard = async (req, res) => {
         sr: index + 1,
         username: acc.username,
 
-        // 🔥 RAW CTR STATUS
+        // RAW CTR STATUS
         status,
 
         // Snapshot data
-        following: ctr?.snapshot?.following ?? 0,
-        posts: ctr?.snapshot?.posts ?? 0,
+        // following: ctr?.snapshot?.following ?? 0,
+        following: ctr?.deltas?.following ?? 0,
+        posts: ctr?.deltas?.posts ?? 0,
 
         // Who submitted CTR
-        ctrDoneBy: ctr?.employeeId ? acc.ownedBy?.name : "—",
+        ctrDoneBy:
+          ctr?.employeeId?.fullName ||
+          ctr?.employeeId?.username ||
+          ctr?.employeeId?.email ||
+          "—",
 
         // Verification time
         verifiedAt: ctr?.verifiedAt || null,

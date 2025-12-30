@@ -14,9 +14,9 @@ function getTodayDateStart() {
    MARK CTR DONE (EMPLOYEE)
    (BACKWARD-COMPATIBLE)
 ========================= */
+
 router.post("/mark-done", protect, async (req, res) => {
   try {
-    // 🔹 platform is OPTIONAL (defaults to instagram)
     const { accountId, platform = "instagram" } = req.body;
     const employeeId = req.user._id;
 
@@ -24,32 +24,26 @@ router.post("/mark-done", protect, async (req, res) => {
       return res.status(400).json({ message: "Missing accountId" });
     }
 
-    const taskDate = getTodayDateStart();
+    const taskId = "daily_ctr";
 
-    const exists = await TaskExecution.findOne({
-      employeeId,
-      accountId,
-      platform,
-      taskDate,
-    });
+    const taskDate = new Date();
+    taskDate.setHours(0, 0, 0, 0);
 
-    if (!exists) {
-      await TaskExecution.create({
-        employeeId,
-        accountId,
-        platform,
-        taskDate,
-      });
+    await TaskExecution.findOneAndUpdate(
+      { employeeId, accountId, taskId, taskDate },
+      {
+        $set: {
+          employeeId,
+          accountId,
+          platform,
+          taskId,
+          taskDate,
+          markedDoneAt: new Date(),
+        },
+      },
+      { upsert: true, new: true }
+    );
 
-      console.log("✅ TaskExecution created", {
-        employeeId,
-        accountId,
-        platform,
-        taskDate,
-      });
-    }
-
-    // Idempotent success
     return res.json({ success: true });
   } catch (err) {
     console.error("❌ MARK DONE ERROR:", err);
@@ -61,14 +55,20 @@ router.post("/mark-done", protect, async (req, res) => {
    RESET TODAY (DEV / ADMIN)
    (UNCHANGED BEHAVIOR)
 ========================= */
+
 router.delete("/reset-today", protect, async (req, res) => {
   try {
     const employeeId = req.user._id;
-    const today = getTodayDateStart();
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
 
     await TaskExecution.deleteMany({
       employeeId,
-      taskDate: today,
+      taskDate: { $gte: start, $lte: end },
     });
 
     return res.json({ success: true });

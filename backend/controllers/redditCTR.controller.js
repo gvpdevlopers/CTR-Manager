@@ -42,8 +42,8 @@ exports.markCTRDone = async (req, res) => {
       date: today,
 
       expected: {
-        comments: 0, // can be configured later
-        posts: 0,
+        comments: redditAccount.expectedComments || 2,
+        posts: redditAccount.expectedPosts || 1,
       },
 
       status: "not_done",
@@ -69,12 +69,12 @@ exports.getMyTodayCTR = async (req, res) => {
     const employeeId = req.user._id;
     const today = new Date().toISOString().split("T")[0];
 
-    const record = await RedditCTRCheck.findOne({
+    const records = await RedditCTRCheck.find({
       employeeId,
       date: today,
     }).select("redditAccountId status");
 
-    res.json(record || null);
+    res.json(records);
   } catch (err) {
     console.error("My CTR fetch error:", err);
     res.status(500).json({ message: "Failed to fetch today CTR" });

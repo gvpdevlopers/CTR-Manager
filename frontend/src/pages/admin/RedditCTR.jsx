@@ -54,19 +54,19 @@ export default function RedditCTR() {
   /* =========================
      VERIFY NOW
   ========================= */
-  const verifyNow = async () => {
-    if (!window.confirm("Verify Reddit CTR now?")) return;
+  // const verifyNow = async () => {
+  //   if (!window.confirm("Verify Reddit CTR now?")) return;
 
-    try {
-      setLoading(true);
-      await API.post("/admin/reddit/verify-now");
-      await fetchCTRStatus();
-    } catch {
-      alert("Verification failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   try {
+  //     setLoading(true);
+  //     await API.post("/admin/reddit/verify-now");
+  //     await fetchCTRStatus();
+  //   } catch {
+  //     alert("Verification failed");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   /* =========================
      STATUS STYLES
@@ -94,12 +94,12 @@ export default function RedditCTR() {
             Refresh
           </button>
 
-          <button
+          {/* <button
             onClick={verifyNow}
             className="px-4 py-2 rounded bg-blue-600 text-white"
           >
             Verify Now
-          </button>
+          </button> */}
         </div>
       </div>
 

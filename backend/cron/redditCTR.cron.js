@@ -1,15 +1,20 @@
 const cron = require("node-cron");
 const RedditCTRCheck = require("../models/RedditCTRCheck");
-const { verifyRedditCTR } = require("../services/redditCTRVerifier");
+const { verifyRedditCTR } = require("../services/redditVerify.service");
 
 const runRedditCTRVerification = async () => {
   const today = new Date().toISOString().split("T")[0];
 
   console.log("[CRON] Reddit CTR verification started");
 
+  // const pendingChecks = await RedditCTRCheck.find({
+  //   date: today,
+  //   status: "not_done",
+  // });
+
   const pendingChecks = await RedditCTRCheck.find({
     date: today,
-    status: "not_done",
+    status: { $in: ["not_done", "suspicious"] },
   });
 
   for (const check of pendingChecks) {
@@ -32,9 +37,19 @@ const runRedditCTRVerification = async () => {
   console.log("[CRON] Total CTR records:", all.length);
 };
 
+// exports.startRedditCTRCron = () => {
+//   // Runs once per day at 01:00 AM
+//   // cron.schedule("0 1 * * *", async () => {
+//   cron.schedule("*/1 * * * *", async () => {
+//     await runRedditCTRVerification();
+//   });
+// };
+
 exports.startRedditCTRCron = () => {
-  // Runs every 30 minutes
+  // cron.schedule("*/1 * * * *", async () => {
+  // Runs once per day at 01:00 AM
   cron.schedule("0 1 * * *", async () => {
+    console.log("⏰ Reddit cron tick:", new Date().toISOString());
     await runRedditCTRVerification();
   });
 };

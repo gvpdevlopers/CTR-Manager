@@ -73,10 +73,7 @@ app.get("/", (req, res) => {
   res.send("CTR Monitor Backend Running ");
 });
 
-// ===== Cron startup (only when allowed) =====
-if (process.env.ENABLE_CRON === "true") {
-  startRedditCTRCron();
-  startInstagramCTRCron();
-}
+startRedditCTRCron();
+// startInstagramCTRCron();
 
 module.exports = app;

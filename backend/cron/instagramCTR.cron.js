@@ -12,108 +12,124 @@ function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getDateNDaysAgo(days) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
-
 /* =========================
    VERIFICATION CRON
 ========================= */
-// cron.schedule("*/2 * * * *", async () => {
-cron.schedule("0 0 1 * * *", async () => {
+// cron.schedule("*/1 * * * *", async () => {
+cron.schedule("0 1 * * *", async () => {
   console.log("⏳ Instagram CTR Verification Started");
 
   try {
     const todayStr = getTodayDate();
-    const yesterdayStr = getDateNDaysAgo(1);
 
-    //  DEFINE start & end (THIS WAS MISSING)
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    console.log("🕒 Date range:", start.toISOString(), "→", end.toISOString());
-
-    //  SUPPORT OLD + NEW SYSTEM
     const executions = await TaskExecution.find({
       platform: "instagram",
       taskDate: { $gte: start, $lte: end },
     }).populate("accountId employeeId");
 
-    console.log("📦 TaskExecutions found:", executions.length);
-
     if (executions.length === 0) {
-      console.warn("⚠️ No TaskExecution found — cron will exit");
+      console.log("⚠️ No TaskExecution found — cron exit");
       return;
     }
 
     for (const exec of executions) {
       const account = exec.accountId;
-      if (!account) {
-        console.warn("⚠️ accountId missing in TaskExecution");
-        continue;
-      }
+      if (!account) continue;
 
+      const username = account.username.trim();
       const employeeSubmittedAt = exec.createdAt || null;
 
-      console.log("➡️ Verifying:", account.username);
+      console.log("➡️ Verifying:", username);
 
-      const data = await fetchInstagramProfile(account.username);
-      if (!data) {
-        console.warn("⚠️ Apify returned no data for", account.username);
+      const data = await fetchInstagramProfile(username);
+      if (!data) continue;
+
+      /* ---------- BASELINE (latest before today) ---------- */
+      let baseline = await InstagramCTRCheck.findOne({
+        instagramAccountId: account._id,
+        date: { $lt: todayStr },
+      }).sort({ date: -1 });
+
+      // Create baseline only once
+      if (!baseline) {
+        console.log("🆕 Baseline stored for", username);
+
+        await InstagramCTRCheck.updateOne(
+          { instagramAccountId: account._id, date: todayStr },
+          {
+            $setOnInsert: {
+              instagramAccountId: account._id,
+              username,
+              employeeId: exec.employeeId?._id,
+              employeeSubmittedAt,
+              snapshot: {
+                followers: data.followersCount,
+                following: data.followsCount,
+                posts: data.postsCount,
+                verified: data.verified,
+                isBusiness: data.isBusinessAccount,
+              },
+              deltas: { following: 0, posts: 0 },
+              status: "not_done",
+              failureReasons: ["Baseline created"],
+              verifiedAt: new Date(),
+            },
+          },
+          { upsert: true }
+        );
+
         continue;
       }
 
-      const prev = await InstagramCTRCheck.findOne({
-        instagramAccountId: account._id,
-        date: yesterdayStr,
+      /* ---------- DELTAS ---------- */
+      let followingChange = 0;
+      let postChange = 0;
+
+      if (baseline.snapshot?.following !== undefined) {
+        if (data.followsCount > baseline.snapshot.following) {
+          followingChange = data.followsCount - baseline.snapshot.following;
+        }
+      }
+
+      if (baseline.snapshot?.posts !== undefined) {
+        if (data.postsCount > baseline.snapshot.posts) {
+          postChange = data.postsCount - baseline.snapshot.posts;
+        }
+      }
+
+      console.log("DELTA", {
+        user: username,
+        following: followingChange,
+        posts: postChange,
       });
 
-      const deltas = {
-        followers: prev
-          ? data.followersCount - (prev.snapshot?.followers || 0)
-          : 0,
-        posts: prev ? data.postsCount - (prev.snapshot?.posts || 0) : 0,
-      };
-
+      /* ---------- STATUS ---------- */
       let status = "not_done";
       const failureReasons = [];
 
-      const followerChange = deltas.followers;
-      const postChange = deltas.posts;
-
-      // Rule 1: If employee confirmed work → done
-      if (employeeSubmittedAt) {
+      if (followingChange > 0 && postChange > 0) {
         status = "done";
-      }
-
-      // Rule 2: Real activity → done
-      if (followerChange > 0 || postChange > 0) {
-        status = "done";
-      }
-
-      // Rule 3: Negative trend → suspicious (overrides done)
-      if (followerChange < 0) {
+      } else if (followingChange > 0 || postChange > 0) {
         status = "suspicious";
-        failureReasons.push("Followers dropped");
+        if (followingChange === 0) failureReasons.push("No following activity");
+        if (postChange === 0) failureReasons.push("No post activity");
       }
 
+      /* ---------- SAVE ---------- */
       await InstagramCTRCheck.updateOne(
-        {
-          instagramAccountId: account._id,
-          date: todayStr,
-        },
+        { instagramAccountId: account._id, date: todayStr },
         {
           $set: {
             instagramAccountId: account._id,
-            username: account.username,
+            username,
             employeeId: exec.employeeId?._id,
             employeeSubmittedAt,
-
             snapshot: {
               followers: data.followersCount,
               following: data.followsCount,
@@ -121,8 +137,7 @@ cron.schedule("0 0 1 * * *", async () => {
               verified: data.verified,
               isBusiness: data.isBusinessAccount,
             },
-
-            deltas,
+            deltas: { following: followingChange, posts: postChange },
             status,
             failureReasons,
             verifiedAt: new Date(),
@@ -131,7 +146,7 @@ cron.schedule("0 0 1 * * *", async () => {
         { upsert: true }
       );
 
-      console.log(`✅ CTR ${status.toUpperCase()} → ${account.username}`);
+      console.log(`✅ CTR ${status.toUpperCase()} → ${username}`);
     }
 
     console.log("✅ Instagram CTR Verification Completed");
