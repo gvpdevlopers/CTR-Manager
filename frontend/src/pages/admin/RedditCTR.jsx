@@ -172,14 +172,14 @@ export default function RedditCTR() {
                           statusStyles[row.status]
                         }`}
                       >
-                        {row.status.replace("_", " ").toUpperCase()}
+                        {row.status.replaceAll("_", " ").toUpperCase()}
                       </span>
                     </td>
 
                     {/* COMMENTS */}
                     <td className="px-4 py-3 text-center font-medium">
                       {row.actual?.comments24h ?? 0} /{" "}
-                      {row.actual?.commentsRequired ?? 2}
+                      {row.actual?.commentsRequired ?? 0}
                       <div className="text-xs text-gray-500">
                         {row.actual?.breakdown?.user1?.comments24h ?? 0} +{" "}
                         {row.actual?.breakdown?.user2?.comments24h ?? 0}
@@ -218,7 +218,13 @@ export default function RedditCTR() {
                     </td>
 
                     <td className="px-4 py-3 text-xs text-gray-500">
-                      {new Date(row.clickedAt).toLocaleString()}
+                      {new Date(row.clickedAt).toLocaleString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </td>
                   </tr>
                 );

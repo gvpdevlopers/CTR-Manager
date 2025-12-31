@@ -29,15 +29,18 @@ router.post("/mark-done", protect, async (req, res) => {
     const taskDate = new Date();
     taskDate.setHours(0, 0, 0, 0);
 
+    const date = new Date().toISOString().slice(0, 10);
+
     await TaskExecution.findOneAndUpdate(
       { employeeId, accountId, taskId, taskDate },
       {
         $set: {
           employeeId,
           accountId,
-          platform,
           taskId,
+          platform,
           taskDate,
+          date,
           markedDoneAt: new Date(),
         },
       },

@@ -14,6 +14,35 @@ const daysFromNow = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 //   return { total: 0, manual };
 // }
 
+const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+
+function toIST(date) {
+  return new Date(date.getTime() + IST_OFFSET);
+}
+
+function isTodayIST(createdUtc) {
+  const created = toIST(new Date(createdUtc * 1000));
+  const now = toIST(new Date());
+
+  return (
+    created.getFullYear() === now.getFullYear() &&
+    created.getMonth() === now.getMonth() &&
+    created.getDate() === now.getDate()
+  );
+}
+
+function isWithinLastNDaysIST(createdUtc, days) {
+  const created = toIST(new Date(createdUtc * 1000));
+  const now = toIST(new Date());
+
+  const diffDays = Math.floor(
+    (now.setHours(0, 0, 0, 0) - created.setHours(0, 0, 0, 0)) /
+      (24 * 60 * 60 * 1000)
+  );
+
+  return diffDays >= 0 && diffDays < days;
+}
+
 async function verifyRedditCTR(ctrCheckId = null, { manual = false } = {}) {
   const today = new Date().toISOString().split("T")[0];
 
@@ -52,7 +81,7 @@ async function verifyRedditCTR(ctrCheckId = null, { manual = false } = {}) {
           );
 
           const recentComments = commentsRes.data.data.children.filter((c) =>
-            isWithinLast24Hours(c.data.created_utc)
+            isTodayIST(c.data.created_utc)
           );
 
           breakdown[u.key].comments24h = recentComments.length;
@@ -72,10 +101,8 @@ async function verifyRedditCTR(ctrCheckId = null, { manual = false } = {}) {
             }
           );
 
-          const hasRecentPost = postsRes.data.data.children.some(
-            (p) =>
-              Date.now() - p.data.created_utc * 1000 <=
-              POST_VALID_DAYS * MS_24_HOURS
+          const hasRecentPost = postsRes.data.data.children.some((p) =>
+            isWithinLastNDaysIST(p.data.created_utc, POST_VALID_DAYS)
           );
 
           breakdown[u.key].posts24h = postsRes.data.data.children.length;
