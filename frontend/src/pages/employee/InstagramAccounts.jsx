@@ -47,11 +47,14 @@ export default function InstagramAccounts() {
     if (ctrDoneMap[accountId]) return;
 
     try {
-      await API.post("/ctr/mark-done", { accountId });
+      await API.post("/ctr/mark-done", {
+        accountId,
+        platform: "instagram",
+      });
 
       setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
     } catch (err) {
-      console.error("CTR ERROR:", err);
+      console.error("CTR ERROR:", err.response?.data || err.message);
     }
   };
 

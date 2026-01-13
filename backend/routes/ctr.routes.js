@@ -4,24 +4,24 @@ const { protect } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-function getTodayDateStart() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 /* =========================
    MARK CTR DONE (EMPLOYEE)
-   (BACKWARD-COMPATIBLE)
 ========================= */
-
 router.post("/mark-done", protect, async (req, res) => {
   try {
-    const { accountId, platform = "instagram" } = req.body;
+    const { accountId, platform } = req.body;
     const employeeId = req.user._id;
 
     if (!accountId) {
       return res.status(400).json({ message: "Missing accountId" });
+    }
+
+    if (!platform) {
+      return res.status(400).json({ message: "Missing platform" });
+    }
+
+    if (!["instagram", "reddit", "quora"].includes(platform)) {
+      return res.status(400).json({ message: "Invalid platform" });
     }
 
     const taskId = "daily_ctr";
@@ -29,7 +29,12 @@ router.post("/mark-done", protect, async (req, res) => {
     const taskDate = new Date();
     taskDate.setHours(0, 0, 0, 0);
 
-    const date = new Date().toISOString().slice(0, 10);
+    console.log("📝 CTR Marked:", {
+      employeeId,
+      accountId,
+      platform,
+      taskDate,
+    });
 
     await TaskExecution.findOneAndUpdate(
       { employeeId, accountId, taskId, taskDate },
@@ -40,7 +45,6 @@ router.post("/mark-done", protect, async (req, res) => {
           taskId,
           platform,
           taskDate,
-          date,
           markedDoneAt: new Date(),
         },
       },
@@ -56,9 +60,7 @@ router.post("/mark-done", protect, async (req, res) => {
 
 /* =========================
    RESET TODAY (DEV / ADMIN)
-   (UNCHANGED BEHAVIOR)
 ========================= */
-
 router.delete("/reset-today", protect, async (req, res) => {
   try {
     const employeeId = req.user._id;
@@ -74,6 +76,8 @@ router.delete("/reset-today", protect, async (req, res) => {
       taskDate: { $gte: start, $lte: end },
     });
 
+    console.log("🔁 CTR Reset for employee:", employeeId);
+
     return res.json({ success: true });
   } catch (err) {
     console.error("RESET CTR ERROR:", err);
@@ -81,6 +85,9 @@ router.delete("/reset-today", protect, async (req, res) => {
   }
 });
 
+/* =========================
+   FETCH TODAY (EMPLOYEE)
+========================= */
 router.get("/today", protect, async (req, res) => {
   try {
     const employeeId = req.user._id;
@@ -94,12 +101,12 @@ router.get("/today", protect, async (req, res) => {
     const executions = await TaskExecution.find({
       employeeId,
       taskDate: { $gte: start, $lte: end },
-    }).select("accountId");
+    }).select("accountId platform");
 
-    res.json(executions);
+    return res.json(executions);
   } catch (err) {
     console.error("❌ FETCH TODAY ERROR:", err);
-    res.status(500).json({ message: "Failed to fetch executions" });
+    return res.status(500).json({ message: "Failed to fetch executions" });
   }
 });
 

@@ -8,6 +8,18 @@ const taskExecutionSchema = new mongoose.Schema(
       required: true,
     },
 
+    // accountId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "InstagramAccount",
+    //   required: true,
+    // },
+
+    // platform: {
+    //   type: String,
+    //   enum: ["instagram", "reddit"],
+    //   default: "instagram",
+    // },
+
     accountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "InstagramAccount",
@@ -16,8 +28,8 @@ const taskExecutionSchema = new mongoose.Schema(
 
     platform: {
       type: String,
-      enum: ["instagram", "reddit"],
-      default: "instagram",
+      enum: ["instagram", "reddit", "quora"],
+      required: true,
     },
 
     taskId: {

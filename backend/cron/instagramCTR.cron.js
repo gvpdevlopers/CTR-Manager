@@ -31,7 +31,7 @@ cron.schedule("0 1 * * *", async () => {
     const executions = await TaskExecution.find({
       platform: "instagram",
       taskDate: { $gte: start, $lte: end },
-    }).populate("accountId employeeId");
+    }).populate({ path: "accountId", select: "username userName handle" });
 
     if (executions.length === 0) {
       console.log("⚠️ No TaskExecution found — cron exit");
@@ -39,10 +39,32 @@ cron.schedule("0 1 * * *", async () => {
     }
 
     for (const exec of executions) {
-      const account = exec.accountId;
-      if (!account) continue;
+      // const account = exec.accountId;
+      // if (!account) continue;
 
-      const username = account.username.trim();
+      // const username = account.username.trim();
+
+      const account = exec.accountId;
+
+      if (!account) {
+        console.log("⚠️ Execution has no account — skipping");
+        continue;
+      }
+
+      const username =
+        account.username || account.userName || account.handle || "";
+
+      const cleanUsername = username.trim();
+      if (!cleanUsername) {
+        console.log(`⚠️ Skipping account ${account._id} — username missing`);
+        continue;
+      }
+
+      if (!username) {
+        console.log(`⚠️ Skipping account ${account._id} — username missing`);
+        continue;
+      }
+
       const employeeSubmittedAt = exec.createdAt || null;
 
       console.log("➡️ Verifying:", username);

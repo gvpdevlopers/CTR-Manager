@@ -1,45 +1,69 @@
-// services/quoraApify.service.js
 const axios = require("axios");
 
 const APIFY_BASE_URL = "https://api.apify.com/v2";
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
 const ACTOR_ID = process.env.APIFY_QUORA_ACTOR_ID;
 
+// console.log("🔹 APIFY_TOKEN present:", !!APIFY_TOKEN);
+// console.log("🔹 APIFY_QUORA_ACTOR_ID:", ACTOR_ID);
+
 if (!APIFY_TOKEN || !ACTOR_ID) {
   throw new Error("Apify token or actor ID missing in env");
 }
 
-/**
- * Fetch public Quora profile data using Apify
- * @param {String} profileUrl
- * @returns {Object} normalized data
- */
 async function fetchQuoraProfileData(profileUrl) {
-  if (!profileUrl) {
-    throw new Error("profileUrl is required for Quora Apify fetch");
-  }
+  if (!profileUrl) throw new Error("profileUrl is required");
 
   try {
-    /* ======================
-       1. START ACTOR RUN
-    ====================== */
     const runResponse = await axios.post(
       `${APIFY_BASE_URL}/acts/${ACTOR_ID}/runs`,
-      { profileUrl },
       {
-        params: { token: APIFY_TOKEN },
-        headers: { "Content-Type": "application/json" },
-      }
+        headless: false,
+        launcher: "chromium",
+        useChrome: true,
+        stealth: true,
+        maxRequestsPerCrawl: 1,
+
+        pageFunction: `
+async function pageFunction({ page, request, log }) {
+  log.info(\`Opened \${request.url}\`);
+  await page.waitForSelector("body", { timeout: 15000 });
+
+  const result = await page.evaluate(() => {
+    const text = document.body.innerText.replace(/\\s+/g, " ");
+
+    const extract = (regex) => {
+      const match = text.match(regex);
+      return match ? Number(match[1]) : 0;
+    };
+
+    return {
+      url: location.href,
+      title: document.title,
+      answers: extract(/(\\d+)\\s*answers?/i),
+      questions: extract(/(\\d+)\\s*questions?/i),
+      following: extract(/(\\d+)\\s*following/i),
+    };
+  });
+
+  return result;
+}
+`,
+        proxyConfiguration: {
+          useApifyProxy: true,
+          apifyProxyGroups: ["RESIDENTIAL"],
+        },
+        startUrls: [{ url: profileUrl }],
+        waitUntil: "domcontentloaded",
+        pageLoadTimeoutSecs: 90,
+        maxRequestRetries: 2,
+      },
+      { params: { token: APIFY_TOKEN } }
     );
 
     const runId = runResponse.data?.data?.id;
-    if (!runId) {
-      throw new Error("Failed to start Apify run");
-    }
+    if (!runId) throw new Error("Failed to start Apify run");
 
-    /* ======================
-       2. WAIT FOR RUN
-    ====================== */
     let runStatus = "RUNNING";
     let runData = null;
 
@@ -54,18 +78,13 @@ async function fetchQuoraProfileData(profileUrl) {
       runStatus = statusRes.data?.data?.status;
       runData = statusRes.data?.data;
 
-      if (runStatus === "FAILED" || runStatus === "ABORTED") {
+      if (["FAILED", "ABORTED"].includes(runStatus)) {
         throw new Error(`Apify run ${runStatus}`);
       }
     }
 
-    /* ======================
-       3. FETCH DATASET ITEMS
-    ====================== */
     const datasetId = runData?.defaultDatasetId;
-    if (!datasetId) {
-      throw new Error("No dataset found for Apify run");
-    }
+    if (!datasetId) throw new Error("No dataset found");
 
     const datasetRes = await axios.get(
       `${APIFY_BASE_URL}/datasets/${datasetId}/items`,
@@ -73,53 +92,25 @@ async function fetchQuoraProfileData(profileUrl) {
     );
 
     const items = datasetRes.data || [];
+    console.log("📦 Apify raw dataset:", JSON.stringify(items, null, 2));
 
-    /* ======================
-       4. NORMALIZE OUTPUT
-    ====================== */
-    let totalAnswers = 0;
-    let answers = [];
-
-    if (items.length > 0) {
-      const profile = items[0];
-
-      totalAnswers = profile.totalAnswers || 0;
-
-      answers = Array.isArray(profile.answers)
-        ? profile.answers.map((a) => ({
-            url: a.url || null,
-            createdAt: a.createdAt ? new Date(a.createdAt) : null,
-            upvotes: Number(a.upvotes || 0),
-          }))
-        : [];
+    if (!items.length || items[0]["#error"]) {
+      throw new Error("Apify blocked or returned error dataset");
     }
 
-    const lastAnswerDate =
-      answers.length > 0
-        ? answers
-            .map((a) => a.createdAt)
-            .filter(Boolean)
-            .sort((a, b) => b - a)[0]
-        : null;
+    const profile = items[0];
 
-    const upvotesTotal = answers.reduce((sum, a) => sum + (a.upvotes || 0), 0);
+    const following = Number(profile.following || 0);
+    const answers = Number(profile.answers || 0);
+    const questions = Number(profile.questions || 0);
 
-    return {
-      success: true,
-      runId,
-      totalAnswers,
-      lastAnswerDate,
-      upvotesTotal,
-      answers,
-    };
+    console.log("📊 Parsed Quora metrics:", { following, answers, questions });
+
+    return { success: true, runId, following, answers, questions };
   } catch (error) {
-    return {
-      success: false,
-      error: error.message || "Quora Apify fetch failed",
-    };
+    console.error("❌ Quora Apify Error:", error.message);
+    return { success: false, error: error.message };
   }
 }
 
-module.exports = {
-  fetchQuoraProfileData,
-};
+module.exports = { fetchQuoraProfileData };

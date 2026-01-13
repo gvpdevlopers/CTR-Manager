@@ -8,20 +8,28 @@ export default function QuoraCTR() {
     done: 0,
     suspicious: 0,
     not_done: 0,
+    pending: 0,
   });
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  /* =========================
-     FETCH DATA
-  ========================= */
   const fetchQuoraCTR = async () => {
     try {
       setLoading(true);
       const res = await API.get("/admin/quora/dashboard");
-      setRows(res.data.rows || []);
+
+      const normalizedRows = (res.data.rows || []).map((row) => {
+        return {
+          ...row,
+          following: row.following ?? 0,
+          answers: row.answers ?? 0,
+          questions: row.questions ?? 0,
+        };
+      });
+
+      setRows(normalizedRows);
       setSummary(res.data.summary || {});
     } catch (err) {
       console.error("Failed to load Quora CTR data", err);
@@ -35,24 +43,17 @@ export default function QuoraCTR() {
     fetchQuoraCTR();
   }, []);
 
-  /* =========================
-     FILTER LOGIC
-  ========================= */
   const filteredRows = rows.filter((row) => {
     const q = search.toLowerCase();
-
     const matchesSearch =
       row.userId?.toLowerCase().includes(q) ||
-      row.employeeName?.toLowerCase().includes(q);
+      row.ctrDoneBy?.toLowerCase().includes(q);
 
     const matchesStatus = statusFilter === "all" || row.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  /* =========================
-     STATUS STYLES
-  ========================= */
   const statusStyles = {
     done: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
     suspicious:
@@ -78,7 +79,7 @@ export default function QuoraCTR() {
       </div>
 
       {/* SUMMARY */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <SummaryCard label="Total" value={summary.total} />
         <SummaryCard label="Done" value={summary.done} color="green" />
         <SummaryCard
@@ -87,6 +88,7 @@ export default function QuoraCTR() {
           color="yellow"
         />
         <SummaryCard label="Not Done" value={summary.not_done} color="red" />
+        <SummaryCard label="Pending" value={summary.pending} />
       </div>
 
       {/* FILTERS */}
@@ -96,19 +98,13 @@ export default function QuoraCTR() {
           placeholder="Search user ID or employee..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/3 px-4 py-2 rounded-lg border 
-            bg-white text-gray-900 
-            dark:bg-gray-900 dark:text-gray-100 
-            dark:border-gray-700"
+          className="w-full md:w-1/3 px-4 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
         />
 
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full md:w-1/4 px-4 py-2 rounded-lg border 
-            bg-white text-gray-900 
-            dark:bg-gray-900 dark:text-gray-100 
-            dark:border-gray-700"
+          className="w-full md:w-1/4 px-4 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
         >
           <option value="all">All Status</option>
           <option value="done">Done</option>
@@ -123,10 +119,14 @@ export default function QuoraCTR() {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
             <tr>
-              <th className="px-4 py-3">Sr</th>
+              <th className="px-4 py-3">#</th>
               <th className="px-4 py-3">User ID</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-center">Answers</th>
+              <th className="px-4 py-3 text-center">Following</th>
+              <th className="px-4 py-3 text-center">
+                Answers (Done / Required)
+              </th>
+              <th className="px-4 py-3 text-center">Questions</th>
               <th className="px-4 py-3">CTR Done By</th>
               <th className="px-4 py-3">Time</th>
             </tr>
@@ -135,13 +135,13 @@ export default function QuoraCTR() {
           <tbody className="divide-y dark:divide-gray-700 text-gray-700 dark:text-gray-200">
             {loading ? (
               <tr>
-                <td colSpan="6" className="text-center py-6">
+                <td colSpan="8" className="text-center py-6">
                   Loading...
                 </td>
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
-                <td colSpan="6" className="text-center py-10 text-gray-500">
+                <td colSpan="8" className="text-center py-10 text-gray-500">
                   No records found
                 </td>
               </tr>
@@ -152,12 +152,9 @@ export default function QuoraCTR() {
                   className="hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   <td className="px-4 py-3">{index + 1}</td>
-
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                     {row.userId}
                   </td>
-
-                  {/* STATUS */}
                   <td className="px-4 py-3">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -169,11 +166,14 @@ export default function QuoraCTR() {
                   </td>
 
                   <td className="px-4 py-3 text-center">
-                    {row.newAnswersCount ?? 0}
+                    {row.following ?? 0}
+                  </td>
+                  <td className="px-4 py-3 text-center">{row.answers}</td>
+                  <td className="px-4 py-3 text-center">
+                    {row.questions ?? 0}
                   </td>
 
                   <td className="px-4 py-3">{row.ctrDoneBy || "—"}</td>
-
                   <td className="px-4 py-3 text-xs text-gray-500">
                     {row.verifiedAt
                       ? new Date(row.verifiedAt).toLocaleString()
@@ -189,9 +189,6 @@ export default function QuoraCTR() {
   );
 }
 
-/* =========================
-   SUMMARY CARD
-========================= */
 function SummaryCard({ label, value, color }) {
   const colors = {
     green: "text-green-600 dark:text-green-400",

@@ -77,6 +77,10 @@ const quoraAccountSchema = new mongoose.Schema(
       default: null,
     },
 
+    baselineFollowing: { type: Number, default: null },
+    baselineAnswers: { type: Number, default: null },
+    baselineQuestions: { type: Number, default: null },
+
     // INTERNAL FLAGS (SAFE EXTENSION)
     verificationEnabled: {
       type: Boolean,

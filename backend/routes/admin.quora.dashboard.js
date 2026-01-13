@@ -9,12 +9,12 @@ const router = express.Router();
 /* =========================
    ADMIN – QUORA CTR DASHBOARD
 ========================= */
+
 router.get("/", protect, isAdmin, async (req, res) => {
   try {
-    // 🔹 Get latest CTR check per account (today or most recent)
     const ctrChecks = await QuoraCTRCheck.find({})
-      .sort({ createdAt: -1 })
-      .populate("employeeId", "name email")
+      .sort({ date: -1, createdAt: -1 })
+      .populate("employeeId", "fullName email")
       .populate("quoraAccountId", "userId")
       .lean();
 
@@ -24,35 +24,36 @@ router.get("/", protect, isAdmin, async (req, res) => {
       done: 0,
       suspicious: 0,
       not_done: 0,
+      pending: 0,
     };
 
     const seenAccounts = new Set();
 
     for (const ctr of ctrChecks) {
-      const acc = ctr.quoraAccountId;
-      if (!acc || seenAccounts.has(acc._id.toString())) continue;
+      if (!ctr.quoraAccountId) continue;
 
-      seenAccounts.add(acc._id.toString());
+      const accId = ctr.quoraAccountId._id.toString();
+      if (seenAccounts.has(accId)) continue;
+      seenAccounts.add(accId);
+
       summary.total++;
-
-      if (summary[ctr.status] !== undefined) {
-        summary[ctr.status]++;
-      }
+      if (summary[ctr.status] !== undefined) summary[ctr.status]++;
 
       rows.push({
         _id: ctr._id,
-        userId: acc.userId,
+        userId: ctr.quoraAccountId.userId,
         status: ctr.status,
-        newAnswersCount: ctr.actual?.newAnswersCount ?? 0,
-        ctrDoneBy: ctr.employeeId?.name || "—",
+        answers: `${ctr.actual?.newAnswersCount ?? 0} / ${
+          ctr.expected?.minAnswers ?? 1
+        }`,
+        following: ctr.actual?.followingDelta ?? 0,
+        questions: ctr.actual?.questionsDelta ?? 0,
+        ctrDoneBy: ctr.employeeId?.fullName || "—",
         verifiedAt: ctr.metadata?.verifiedAt || ctr.createdAt,
       });
     }
 
-    return res.json({
-      summary,
-      rows,
-    });
+    return res.json({ rows, summary });
   } catch (err) {
     console.error("❌ QUORA DASHBOARD ERROR:", err);
     return res

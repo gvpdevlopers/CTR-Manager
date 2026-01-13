@@ -22,13 +22,17 @@ const ctrRoutes = require("./routes/ctr.routes");
 // Admin feature routes
 const adminRedditRoutes = require("./routes/admin.reddit.routes");
 const adminInstagramRoutes = require("./routes/adminInstagram.routes");
+const adminQuoraRoutes = require("./routes/adminQuora.routes");
 const adminQuoraDashboardRoutes = require("./routes/admin.quora.dashboard");
+const { startBHWCTRCron } = require("./cron/bhwCTR.cron");
+const bhwCTRRoutes = require("./routes/bhwCTR.routes");
 
 // Platform feature routes
 const redditRoutes = require("./routes/reddit.routes");
 
 // ===== Cron Jobs =====
 const { startRedditCTRCron } = require("./cron/redditCTR.cron");
+const { startQuoraCTRCron } = require("./cron/quoraCTR.cron");
 const { startInstagramCTRCron } = require("./cron/instagramCTR.cron");
 
 const app = express();
@@ -66,7 +70,9 @@ app.use("/api/reddit", redditRoutes);
 // Admin APIs
 app.use("/api/admin/reddit", adminRedditRoutes);
 app.use("/api/admin/instagram", adminInstagramRoutes);
+app.use("/api/admin", adminQuoraRoutes);
 app.use("/api/admin/quora/dashboard", adminQuoraDashboardRoutes);
+app.use("/admin/bhw", bhwCTRRoutes);
 
 // Health Check
 app.get("/", (req, res) => {
@@ -74,6 +80,8 @@ app.get("/", (req, res) => {
 });
 
 startRedditCTRCron();
+startQuoraCTRCron();
 // startInstagramCTRCron();
+startBHWCTRCron();
 
 module.exports = app;

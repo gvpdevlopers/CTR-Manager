@@ -23,6 +23,9 @@ const quoraCTRCheckSchema = new mongoose.Schema(
       type: String, // YYYY-MM-DD
       required: true,
     },
+    baselineFollowing: { type: Number, default: null },
+    baselineAnswers: { type: Number, default: null },
+    baselineQuestions: { type: Number, default: null },
 
     /* ======================
        EXPECTED (RULES SNAPSHOT)
@@ -45,30 +48,21 @@ const quoraCTRCheckSchema = new mongoose.Schema(
     ====================== */
 
     actual: {
-      answersBefore: {
-        type: Number,
-        default: 0,
-      },
+      followingBefore: { type: Number, default: 0 },
+      followingAfter: { type: Number, default: 0 },
+      followingDelta: { type: Number, default: 0 },
 
-      answersAfter: {
-        type: Number,
-        default: 0,
-      },
+      answersBefore: { type: Number, default: 0 },
+      answersAfter: { type: Number, default: 0 },
+      answersDelta: { type: Number, default: 0 },
 
-      newAnswersCount: {
-        type: Number,
-        default: 0,
-      },
+      questionsBefore: { type: Number, default: 0 },
+      questionsAfter: { type: Number, default: 0 },
+      questionsDelta: { type: Number, default: 0 },
 
-      lastAnswerDate: {
-        type: Date,
-        default: null,
-      },
-
-      upvotesDelta: {
-        type: Number,
-        default: 0,
-      },
+      newAnswersCount: { type: Number, default: 0 },
+      lastAnswerDate: { type: Date, default: null },
+      upvotesDelta: { type: Number, default: 0 },
     },
 
     /* ======================

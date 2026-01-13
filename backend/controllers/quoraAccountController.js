@@ -1,11 +1,17 @@
 const QuoraAccount = require("../models/QuoraAccount");
 const { parse } = require("json2csv");
 
+function buildQuoraProfileUrl(username) {
+  return `https://www.quora.com/profile/${encodeURIComponent(username)}`;
+}
+
 // ✅ EMPLOYEE / ADMIN — CREATE SINGLE
 exports.createQuoraAccount = async (req, res) => {
   try {
     const { userId, name1, email1, password1, name2, email2, password2 } =
       req.body;
+
+    const profileUrl = buildQuoraProfileUrl(name1);
 
     const account = await QuoraAccount.create({
       ownerEmployeeId: req.user._id,
@@ -16,6 +22,8 @@ exports.createQuoraAccount = async (req, res) => {
       name2,
       email2,
       password2,
+      username: name1,
+      profileUrl,
     });
 
     res.status(201).json(account);

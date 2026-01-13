@@ -1,8 +1,7 @@
 const express = require("express");
 const QuoraAccount = require("../models/QuoraAccount");
 const { fetchQuoraProfileData } = require("../services/quoraApify.service");
-const { protect } = require("../middlewares/authMiddleware");
-const { adminOnly } = require("../middlewares/adminMiddleware");
+const { protect, isAdmin } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
@@ -13,10 +12,11 @@ const router = express.Router();
 router.post(
   "/quora-accounts/:id/capture-baseline",
   protect,
-  adminOnly,
+  isAdmin,
   async (req, res) => {
     try {
       const { id } = req.params;
+      const { force } = req.query; // ?force=true to overwrite
 
       const account = await QuoraAccount.findById(id);
 
@@ -30,10 +30,20 @@ router.post(
           .json({ message: "Profile URL not set for this account" });
       }
 
-      // Prevent accidental overwrite
-      if (account.baselineCapturedAt) {
-        return res.status(400).json({
-          message: "Baseline already captured. Reset explicitly if required.",
+      /* ======================
+         BASELINE EXISTS HANDLING
+      ====================== */
+
+      if (account.baselineCapturedAt && force !== "true") {
+        return res.status(200).json({
+          success: true,
+          message: "Baseline already exists",
+          baseline: {
+            following: account.baselineFollowing,
+            answers: account.baselineAnswers,
+            questions: account.baselineQuestions,
+          },
+          note: "Use ?force=true to overwrite baseline",
         });
       }
 
@@ -43,31 +53,35 @@ router.post(
       const apifyResult = await fetchQuoraProfileData(account.profileUrl);
 
       if (!apifyResult.success) {
-        return res.status(500).json({
-          message: "Failed to fetch Quora data",
+        return res.status(200).json({
+          success: false,
+          message: "Scraper failed — baseline not changed",
           error: apifyResult.error,
         });
       }
 
-      const { totalAnswers, lastAnswerDate, runId } = apifyResult;
+      const { following, answers, questions, runId } = apifyResult;
 
       /* ======================
-         SAVE BASELINE
+         SAVE / OVERWRITE BASELINE
       ====================== */
-      account.baselineAnswersCount = totalAnswers;
-      account.baselineLastAnswerDate = lastAnswerDate;
+      account.baselineFollowing = following;
+      account.baselineAnswers = answers;
+      account.baselineQuestions = questions;
       account.baselineCapturedAt = new Date();
-      account.lastCheckedAt = new Date();
-      account.ctrDone = false; // explicit safety
 
       await account.save();
 
       return res.json({
         success: true,
-        message: "Baseline captured successfully",
+        message:
+          force === "true"
+            ? "Baseline overwritten successfully"
+            : "Baseline captured successfully",
         baseline: {
-          answersCount: totalAnswers,
-          lastAnswerDate,
+          following,
+          answers,
+          questions,
           capturedAt: account.baselineCapturedAt,
         },
         metadata: {
