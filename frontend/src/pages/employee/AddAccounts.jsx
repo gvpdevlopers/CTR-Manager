@@ -32,7 +32,11 @@ export default function AddAccounts() {
     if (platform === "instagram") return form.name && form.username;
     if (platform === "reddit" || platform === "quora")
       return form.userId && (form.email1 || form.name1);
-    if (platform === "bhw") return form.userId && (form.email || form.name);
+    if (platform === "bhw")
+      return (
+        form.userId && form.name && form.email && form.password && form.link
+      );
+
     return true;
   };
 
@@ -98,6 +102,7 @@ export default function AddAccounts() {
           const [userId, name, email, password, link] = v;
           payload = { userId, name, email, password, link };
         }
+        if (platform === "bhw" && v.length < 5) continue;
 
         await API.post(getApiUrl(), payload);
       }

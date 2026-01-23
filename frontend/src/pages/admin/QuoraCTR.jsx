@@ -20,17 +20,22 @@ export default function QuoraCTR() {
       setLoading(true);
       const res = await API.get("/admin/quora/dashboard");
 
-      const normalizedRows = (res.data.rows || []).map((row) => {
-        return {
-          ...row,
-          following: row.following ?? 0,
-          answers: row.answers ?? 0,
-          questions: row.questions ?? 0,
-        };
-      });
+      const normalizedRows = (res.data.rows || []).map((row) => ({
+        ...row,
+        following: row.following ?? 0,
+        answers: row.answers ?? "0 / 1",
+        questions: row.questions ?? 0,
+        verifiedAt: row.verifiedAt || row.createdAt || null,
+      }));
 
       setRows(normalizedRows);
-      setSummary(res.data.summary || {});
+      setSummary({
+        total: res.data.summary?.total ?? 0,
+        done: res.data.summary?.done ?? 0,
+        suspicious: res.data.summary?.suspicious ?? 0,
+        not_done: res.data.summary?.not_done ?? 0,
+        pending: res.data.summary?.pending ?? 0,
+      });
     } catch (err) {
       console.error("Failed to load Quora CTR data", err);
       alert("Failed to load Quora CTR data");
@@ -55,11 +60,11 @@ export default function QuoraCTR() {
   });
 
   const statusStyles = {
-    done: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+    done: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
     suspicious:
-      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
-    not_done: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-    pending: "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+    not_done: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+    pending: "bg-gray-200 text-gray-700 dark:bg-gray-800/60 dark:text-gray-300",
   };
 
   return (
@@ -72,13 +77,13 @@ export default function QuoraCTR() {
 
         <button
           onClick={fetchQuoraCTR}
-          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-800"
+          className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
         >
           Refresh
         </button>
       </div>
 
-      {/* SUMMARY */}
+      {/* SUMMARY CARDS (FIXED FOR DARK MODE) */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <SummaryCard label="Total" value={summary.total} />
         <SummaryCard label="Done" value={summary.done} color="green" />
@@ -114,18 +119,16 @@ export default function QuoraCTR() {
         </select>
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto rounded-lg border dark:border-gray-700">
+      {/* TABLE (DARK MODE FIXED) */}
+      <div className="overflow-x-auto rounded-lg border bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+          <thead className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100">
             <tr>
               <th className="px-4 py-3">#</th>
               <th className="px-4 py-3">User ID</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-center">Following</th>
-              <th className="px-4 py-3 text-center">
-                Answers (Done / Required)
-              </th>
+              <th className="px-4 py-3 text-center">Answers</th>
               <th className="px-4 py-3 text-center">Questions</th>
               <th className="px-4 py-3">CTR Done By</th>
               <th className="px-4 py-3">Time</th>
@@ -141,7 +144,10 @@ export default function QuoraCTR() {
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
-                <td colSpan="8" className="text-center py-10 text-gray-500">
+                <td
+                  colSpan="8"
+                  className="text-center py-10 text-gray-500 dark:text-gray-400"
+                >
                   No records found
                 </td>
               </tr>
@@ -149,12 +155,10 @@ export default function QuoraCTR() {
               filteredRows.map((row, index) => (
                 <tr
                   key={row._id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800/60"
                 >
                   <td className="px-4 py-3">{index + 1}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
-                    {row.userId}
-                  </td>
+                  <td className="px-4 py-3 font-medium">{row.userId}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -164,17 +168,11 @@ export default function QuoraCTR() {
                       {row.status.toUpperCase()}
                     </span>
                   </td>
-
-                  <td className="px-4 py-3 text-center">
-                    {row.following ?? 0}
-                  </td>
+                  <td className="px-4 py-3 text-center">{row.following}</td>
                   <td className="px-4 py-3 text-center">{row.answers}</td>
-                  <td className="px-4 py-3 text-center">
-                    {row.questions ?? 0}
-                  </td>
-
+                  <td className="px-4 py-3 text-center">{row.questions}</td>
                   <td className="px-4 py-3">{row.ctrDoneBy || "—"}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500">
+                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
                     {row.verifiedAt
                       ? new Date(row.verifiedAt).toLocaleString()
                       : "—"}
@@ -197,7 +195,7 @@ function SummaryCard({ label, value, color }) {
   };
 
   return (
-    <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border dark:border-gray-700">
+    <div className="p-4 rounded-lg border bg-white dark:bg-gray-900 dark:border-gray-700 shadow-sm">
       <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
       <p
         className={`text-2xl font-semibold ${

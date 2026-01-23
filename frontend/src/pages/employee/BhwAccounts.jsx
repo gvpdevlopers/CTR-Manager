@@ -69,7 +69,7 @@ export default function BhwAccounts() {
     try {
       await API.patch(`/bhw-accounts/${id}/toggle`, { status });
       setAccounts((prev) =>
-        prev.map((a) => (a._id === id ? { ...a, status } : a))
+        prev.map((a) => (a._id === id ? { ...a, status } : a)),
       );
     } catch {
       alert("Status update failed");
@@ -140,14 +140,14 @@ export default function BhwAccounts() {
         <table className="w-full text-sm">
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr className="text-gray-700 dark:text-gray-100">
-              <th className="py-2 px-3 text-left">Sr</th>
-              <th className="py-2 px-3 text-left">User ID</th>
-              <th className="py-2 px-3 text-left">Name</th>
-              <th className="py-2 px-3 text-left">Email</th>
-              <th className="py-2 px-3 text-left">Password</th>
-              <th className="py-2 px-3 text-left">Link</th>
-              <th className="py-2 px-3 text-left">Status</th>
-              <th className="py-2 px-3 text-center">CTR Done</th>
+              <th className="py-2 px-3 w-12 text-left">Sr</th>
+              <th className="py-2 px-3 w-24 text-left">User ID</th>
+              <th className="py-2 px-3 w-40 text-left">Name</th>
+              <th className="py-2 px-3 w-56 text-left">Email</th>
+              <th className="py-2 px-3 w-32 text-left">Password</th>
+              <th className="py-2 px-3 w-64 text-left">Link</th>
+              <th className="py-2 px-3 w-32 text-center">Status</th>
+              <th className="py-2 px-3 w-24 text-center">Actions</th>
             </tr>
           </thead>
 
@@ -173,12 +173,23 @@ export default function BhwAccounts() {
                     hover:bg-gray-100 dark:hover:bg-gray-700/60
                   "
                 >
-                  <td className="py-2 px-3">{i + 1}</td>
-                  <td className="py-2 px-3">{acc.userId}</td>
-                  <td className="py-2 px-3">{acc.name}</td>
-                  <td className="py-2 px-3">{acc.email}</td>
-                  <td className="py-2 px-3">{acc.password}</td>
-                  <td className="py-2 px-3 truncate max-w-xs">
+                  <td className="py-2 px-3 whitespace-nowrap">{i + 1}</td>
+
+                  <td className="py-2 px-3 whitespace-nowrap">{acc.userId}</td>
+
+                  <td className="py-2 px-3 truncate max-w-[160px]">
+                    {acc.name}
+                  </td>
+
+                  <td className="py-2 px-3 truncate max-w-[220px]">
+                    {acc.email}
+                  </td>
+
+                  <td className="py-2 px-3 truncate max-w-[140px]">
+                    {acc.password}
+                  </td>
+
+                  <td className="py-2 px-3 truncate max-w-[260px]">
                     {acc.link || "—"}
                   </td>
 
@@ -214,8 +225,8 @@ export default function BhwAccounts() {
                         acc.status === "not_working"
                           ? "Account not working"
                           : ctrDoneMap[acc._id]
-                          ? "CTR already marked"
-                          : "Mark CTR done"
+                            ? "CTR already marked"
+                            : "Mark CTR done"
                       }
                     />
                   </td>

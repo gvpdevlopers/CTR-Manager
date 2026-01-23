@@ -23,13 +23,13 @@ const runRedditCTRVerification = async () => {
     } catch (err) {
       console.error(
         `[CRON] Verification failed for CTRCheck ${check._id}`,
-        err.message
+        err.message,
       );
     }
   }
 
   console.log(
-    `[CRON] Reddit CTR verification finished (${pendingChecks.length} checks)`
+    `[CRON] Reddit CTR verification finished (${pendingChecks.length} checks)`,
   );
   console.log("[CRON] Today:", today);
 

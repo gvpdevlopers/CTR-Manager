@@ -14,11 +14,7 @@ async function verifyQuoraCTR(quoraAccountId, date) {
   if (!account) throw new Error("QuoraAccount not found");
 
   console.log("DEBUG: verificationEnabled =", account.verificationEnabled);
-
-  if (account.verificationEnabled === false) {
-    console.log("DEBUG EXIT → verification disabled");
-    return null;
-  }
+  if (account.verificationEnabled === false) return null;
 
   const existing = await QuoraCTRCheck.findOne({
     quoraAccountId: account._id,
@@ -32,26 +28,35 @@ async function verifyQuoraCTR(quoraAccountId, date) {
 
   console.log("🔎 Account:", account.userId);
 
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+
   const taskExecution = await TaskExecution.findOne({
     accountId: account._id,
     platform: "quora",
-    taskDate: {
-      $gte: new Date(date + "T00:00:00.000Z"),
-      $lt: new Date(date + "T23:59:59.999Z"),
-    },
+    taskDate: { $gte: start, $lt: end },
   });
 
   console.log("DEBUG: taskExecution =", !!taskExecution);
 
+  // 1️⃣ Employee did not mark CTR
   if (!taskExecution) {
     console.log("DEBUG EXIT → no taskExecution");
-    return await QuoraCTRCheck.create({
-      quoraAccountId: account._id,
-      employeeId: account.ownerEmployeeId,
-      date,
-      status: "not_done",
-      metadata: { error: "Employee did not mark CTR done" },
-    });
+    return await QuoraCTRCheck.findOneAndUpdate(
+      { quoraAccountId: account._id, date },
+      {
+        $set: {
+          quoraAccountId: account._id,
+          employeeId: account.ownerEmployeeId,
+          date,
+          status: "not_done",
+          metadata: { error: "Employee did not mark CTR done" },
+        },
+      },
+      { upsert: true, new: true }
+    );
   }
 
   console.log("DEBUG: baseline =", {
@@ -60,40 +65,53 @@ async function verifyQuoraCTR(quoraAccountId, date) {
     questions: account.baselineQuestions,
   });
 
+  // 2️⃣ Baseline missing
   if (
     account.baselineFollowing == null ||
     account.baselineAnswers == null ||
     account.baselineQuestions == null
   ) {
     console.log("DEBUG EXIT → baseline missing");
-    return await QuoraCTRCheck.create({
-      quoraAccountId: account._id,
-      employeeId: account.ownerEmployeeId,
-      date,
-      status: "pending",
-      metadata: { error: "Baseline not captured" },
-    });
+    return await QuoraCTRCheck.findOneAndUpdate(
+      { quoraAccountId: account._id, date },
+      {
+        $set: {
+          quoraAccountId: account._id,
+          employeeId: account.ownerEmployeeId,
+          date,
+          status: "pending",
+          metadata: { error: "Baseline not captured" },
+        },
+      },
+      { upsert: true, new: true }
+    );
   }
 
   console.log("DEBUG → calling Apify");
-
   const apifyResult = await fetchQuoraProfileData(account.profileUrl);
   console.log("DEBUG: apifyResult =", apifyResult);
 
+  // 3️⃣ Apify failed
   if (!apifyResult.success) {
     console.log("DEBUG EXIT → apify failed");
-    return await QuoraCTRCheck.create({
-      quoraAccountId: account._id,
-      employeeId: account.ownerEmployeeId,
-      date,
-      status: "pending",
-      metadata: { error: apifyResult.error },
-    });
+    return await QuoraCTRCheck.findOneAndUpdate(
+      { quoraAccountId: account._id, date },
+      {
+        $set: {
+          quoraAccountId: account._id,
+          employeeId: taskExecution.employeeId,
+          date,
+          status: "pending",
+          metadata: { error: apifyResult.error },
+        },
+      },
+      { upsert: true, new: true }
+    );
   }
 
-  const { following, answers, questions, runId } = apifyResult;
+  const { following, answers, questions, runId, lastAnswerDate } = apifyResult;
 
-  // 🚫 Defensive: reject silent zero responses
+  // 4️⃣ Defensive: reject silent zero results
   if (
     following === 0 &&
     answers === 0 &&
@@ -103,7 +121,6 @@ async function verifyQuoraCTR(quoraAccountId, date) {
       account.baselineQuestions > 0)
   ) {
     console.log("🚨 Apify returned all zeros — skipping write");
-
     return await QuoraCTRCheck.findOneAndUpdate(
       { quoraAccountId: account._id, date },
       {
@@ -129,15 +146,36 @@ async function verifyQuoraCTR(quoraAccountId, date) {
   const followingDelta = Math.max(0, following - account.baselineFollowing);
   const questionsDelta = Math.max(0, questions - account.baselineQuestions);
 
+  // ============ 🔹 15-DAY RULE + 3-CONDITION LOGIC 🔹 ============
+
+  // (A) Answers condition → within last 15 days
+  const now = new Date();
+  const fifteenDaysAgo = new Date();
+  fifteenDaysAgo.setDate(now.getDate() - 15);
+
+  const lastAnswer = lastAnswerDate ? new Date(lastAnswerDate) : null;
+  const answersDone = lastAnswer && lastAnswer >= fifteenDaysAgo;
+
+  // (B) Following condition → must increase today
+  const followingDone = followingDelta > 0;
+
+  // (C) Questions condition → must increase today
+  const questionsDone = questionsDelta > 0;
+
+  const trueCount =
+    (answersDone ? 1 : 0) + (followingDone ? 1 : 0) + (questionsDone ? 1 : 0);
+
   let status = "not_done";
 
-  if (answersDelta >= 1 || followingDelta >= 1 || questionsDelta >= 1) {
-    status = "done";
+  if (trueCount === 3) {
+    status = "done"; // All 3 true
+  } else if (trueCount === 2) {
+    status = "suspicious"; // Any 2 true
+  } else {
+    status = "not_done"; // 0 or 1 true
   }
 
-  if (answersDelta > 10 || followingDelta > 15 || questionsDelta > 5) {
-    status = "suspicious";
-  }
+  // ============ 🔹 WRITE CTR RECORD (UPSERT) 🔹 ============
 
   const ctrCheck = await QuoraCTRCheck.findOneAndUpdate(
     { quoraAccountId: account._id, date },
@@ -146,15 +184,12 @@ async function verifyQuoraCTR(quoraAccountId, date) {
         quoraAccountId: account._id,
         employeeId: taskExecution.employeeId,
         date,
-        expected: {
-          minAnswers: 1,
-          answerFrequencyDays: 15,
-        },
+        expected: { minAnswers: 1, answerFrequencyDays: 15 },
         actual: {
           answersBefore: account.baselineAnswers,
           answersAfter: answers,
           newAnswersCount: answersDelta,
-          lastAnswerDate: null,
+          lastAnswerDate: lastAnswer || null,
           upvotesDelta: 0,
 
           followingBefore: account.baselineFollowing,
@@ -166,17 +201,14 @@ async function verifyQuoraCTR(quoraAccountId, date) {
           questionsDelta,
         },
         status,
-        metadata: {
-          apifyRunId: runId,
-          verifiedAt: new Date(),
-        },
+        metadata: { apifyRunId: runId, verifiedAt: new Date() },
       },
     },
     { upsert: true, new: true }
   );
 
-  // ✅ Only update baseline if values are valid
-  if (status === "done" && following > 0 && answers > 0 && questions > 0) {
+  // Update baseline only when fully done
+  if (status === "done") {
     account.baselineFollowing = following;
     account.baselineAnswers = answers;
     account.baselineQuestions = questions;

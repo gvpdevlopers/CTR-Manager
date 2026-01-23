@@ -34,6 +34,8 @@ exports.createBhwAccount = async (req, res) => {
 //   }
 // };
 
+
+
 // ✅ ADMIN + EMPLOYEE — GET ALL (GLOBAL)
 exports.getAllBhwAccounts = async (req, res) => {
   try {
@@ -68,7 +70,7 @@ exports.updateBhwAccount = async (req, res) => {
     const updated = await BhwAccount.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true },
     );
 
     res.json(updated);
@@ -78,15 +80,24 @@ exports.updateBhwAccount = async (req, res) => {
 };
 
 // ✅ TOGGLE STATUS
+// controllers/bhwAccountController.js
 exports.toggleBhwStatus = async (req, res) => {
   try {
-    const acc = await BhwAccount.findById(req.params.id);
-    acc.status = acc.status === "working" ? "not_working" : "working";
-    await acc.save();
+    const { status } = req.body;
+
+    if (!["working", "suspicious", "not_working"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const acc = await BhwAccount.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true },
+    );
 
     res.json(acc);
   } catch {
-    res.status(500).json({ message: "Toggle failed" });
+    res.status(500).json({ message: "Status update failed" });
   }
 };
 
@@ -105,7 +116,7 @@ exports.exportBhwCSV = async (req, res) => {
   try {
     const accounts = await BhwAccount.find().populate(
       "ownerEmployeeId",
-      "fullName"
+      "fullName",
     );
 
     const csv = parse(accounts);

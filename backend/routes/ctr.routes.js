@@ -26,8 +26,7 @@ router.post("/mark-done", protect, async (req, res) => {
 
     const taskId = "daily_ctr";
 
-    const taskDate = new Date();
-    taskDate.setHours(0, 0, 0, 0);
+    const taskDate = new Date(new Date().toLocaleDateString("en-CA"));
 
     console.log("📝 CTR Marked:", {
       employeeId,

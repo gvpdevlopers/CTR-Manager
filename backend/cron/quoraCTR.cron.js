@@ -9,9 +9,7 @@ function startQuoraCTRCron() {
   // cron.schedule("*/1 * * * *", async () => {
   // Runs once per day at 01:00 AM
   cron.schedule("0 1 * * *", async () => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const today = now.toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString("en-CA");
 
     console.log(`⏳ Quora CTR Cron Started – ${today}`);
 

@@ -13,7 +13,7 @@ const router = express.Router();
 router.get("/", protect, isAdmin, async (req, res) => {
   try {
     const ctrChecks = await QuoraCTRCheck.find({})
-      .sort({ date: -1, createdAt: -1 })
+      .sort({ createdAt: -1 })
       .populate("employeeId", "fullName email")
       .populate("quoraAccountId", "userId")
       .lean();

@@ -1,0 +1,50 @@
+[
+  {
+    "domain": ".blackhatworld.com",
+    "expiry": 1803540348,
+    "httpOnly": false,
+    "name": "_ga",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "GA1.1.1584395336.1768980348"
+  },
+  {
+    "domain": "www.blackhatworld.com",
+    "httpOnly": false,
+    "name": "xf_csrf",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "value": "hr6Z5JQ_PVyRpgwR"
+  },
+  {
+    "domain": ".blackhatworld.com",
+    "expiry": 1803540348,
+    "httpOnly": false,
+    "name": "_ga_VH2PZEKYEE",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "GS2.1.s1768980348$o1$g0$t1768980348$j60$l0$h0"
+  },
+  {
+    "domain": "www.blackhatworld.com",
+    "httpOnly": true,
+    "name": "xf_session",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "value": "Gs5EIWQMuubZn5E8SJViX-hi4Hsjq3C3"
+  },
+  {
+    "domain": ".blackhatworld.com",
+    "expiry": 1800516346,
+    "httpOnly": true,
+    "name": "cf_clearance",
+    "path": "/",
+    "sameSite": "None",
+    "secure": true,
+    "value": "VB_cLDa3_lfJPygVJD_1rnxrDPVNHQ10nyRtsJvdD_w-1768980349-1.2.1.1-hhMEosdjTJAsIXTjQxIJMxtcRaqM0.JquAMgnC0knse1KXP1cBM2YWKxj8nYY3Z7JdSvyd49kmIsqq1xvjXQn4dSRzVsnJUpWDEO_AMuVyEqp_Liy2ukKLrDVU8pD_cYcx8Wu5XgiAl3iGX_YydX2kAuk7sD6k6q8CWfmwTw6Y2Huv94aGxcod3mk4ObMx3EB3.zTlPCXF6U.tepa74vZ_CRg4y17R2ntQ9stG1NoeU"
+  }
+]

@@ -24,12 +24,14 @@ const bhwCTRCheckSchema = new mongoose.Schema(
     snapshot: {
       messages: { type: Number, default: 0 },
       reactionScore: { type: Number, default: 0 },
+      threadsStarted: { type: Number, default: 0 }, // NEW
       lastSeen: { type: String, default: null },
     },
 
     delta: {
       messages: { type: Number, default: 0 },
       reactionScore: { type: Number, default: 0 },
+      threadsStarted: { type: Number, default: 0 }, // NEW
     },
 
     status: {
@@ -44,7 +46,7 @@ const bhwCTRCheckSchema = new mongoose.Schema(
       error: { type: String, default: null },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 bhwCTRCheckSchema.index({ bhwAccountId: 1, date: 1 }, { unique: true });

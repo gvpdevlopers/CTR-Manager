@@ -72,7 +72,7 @@ app.use("/api/admin/reddit", adminRedditRoutes);
 app.use("/api/admin/instagram", adminInstagramRoutes);
 app.use("/api/admin", adminQuoraRoutes);
 app.use("/api/admin/quora/dashboard", adminQuoraDashboardRoutes);
-app.use("/admin/bhw", bhwCTRRoutes);
+app.use("/api/admin/bhw", bhwCTRRoutes);
 
 // Health Check
 app.get("/", (req, res) => {
@@ -82,6 +82,6 @@ app.get("/", (req, res) => {
 startRedditCTRCron();
 startQuoraCTRCron();
 // startInstagramCTRCron();
-startBHWCTRCron();
+// startBHWCTRCron();
 
 module.exports = app;

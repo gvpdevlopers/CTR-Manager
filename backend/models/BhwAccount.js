@@ -20,12 +20,17 @@ const bhwAccountSchema = new mongoose.Schema(
       enum: ["working", "suspicious", "not_working"],
       default: "working",
     },
+    bhwSlug: {
+      type: String,
+      required: true,
+      index: true,
+    },
 
     // Automation-ready
     lastCheckedAt: { type: Date, default: null },
     ctrDone: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("BhwAccount", bhwAccountSchema);

@@ -50,7 +50,7 @@ export default function AdminBhwAccounts() {
     try {
       await API.put(`/bhw-accounts/${id}`, { [field]: value });
       setAccounts((prev) =>
-        prev.map((a) => (a._id === id ? { ...a, [field]: value } : a))
+        prev.map((a) => (a._id === id ? { ...a, [field]: value } : a)),
       );
     } catch {
       alert("Update failed");
@@ -157,16 +157,16 @@ export default function AdminBhwAccounts() {
         border border-gray-200 dark:border-gray-700"
       >
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 dark:bg-gray-900">
-            <tr className="text-left text-gray-700 dark:text-gray-300">
-              <th className="px-2 py-2">Sr</th>
-              <th>User ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Password</th>
-              <th>Link</th>
-              <th>Status</th>
-              <th className="text-right pr-2">Actions</th>
+          <thead className="bg-gray-100 dark:bg-gray-700">
+            <tr className="text-gray-700 dark:text-gray-100">
+              <th className="py-2 px-3 w-12 text-left">Sr</th>
+              <th className="py-2 px-3 w-24 text-left">User ID</th>
+              <th className="py-2 px-3 w-40 text-left">Name</th>
+              <th className="py-2 px-3 w-56 text-left">Email</th>
+              <th className="py-2 px-3 w-32 text-left">Password</th>
+              <th className="py-2 px-3 w-64 text-left">Link</th>
+              <th className="py-2 px-3 w-32 text-center">Status</th>
+              <th className="py-2 px-3 w-24 text-center">Actions</th>
             </tr>
           </thead>
 
@@ -190,11 +190,11 @@ export default function AdminBhwAccounts() {
                   className="border-t border-gray-200 dark:border-gray-700
                   hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 >
-                  <td className="px-2 py-2 text-gray-900 dark:text-gray-100">
+                  <td className="px-2 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap">
                     {i + 1}
                   </td>
 
-                  <td className="py-2">
+                  <td className="py-2 whitespace-nowrap">
                     <input
                       defaultValue={acc.userId}
                       onBlur={(e) =>
@@ -204,7 +204,7 @@ export default function AdminBhwAccounts() {
                     />
                   </td>
 
-                  <td className="py-2">
+                  <td className="py-2 truncate max-w-[160px]">
                     <input
                       defaultValue={acc.name}
                       onBlur={(e) =>
@@ -214,7 +214,7 @@ export default function AdminBhwAccounts() {
                     />
                   </td>
 
-                  <td className="py-2">
+                  <td className="py-2 truncate max-w-[220px]">
                     <input
                       defaultValue={acc.email}
                       onBlur={(e) =>
@@ -224,7 +224,7 @@ export default function AdminBhwAccounts() {
                     />
                   </td>
 
-                  <td className="py-2">
+                  <td className="py-2 truncate max-w-[140px]">
                     <input
                       defaultValue={acc.password}
                       onBlur={(e) =>
@@ -234,7 +234,7 @@ export default function AdminBhwAccounts() {
                     />
                   </td>
 
-                  <td className="py-2">
+                  <td className="py-2 truncate max-w-[260px]">
                     <input
                       defaultValue={acc.link}
                       onBlur={(e) =>
@@ -244,7 +244,7 @@ export default function AdminBhwAccounts() {
                     />
                   </td>
 
-                  <td className="py-2">
+                  <td className="py-2 px-3 text-center">
                     <select
                       value={acc.status}
                       onChange={(e) => changeStatus(acc._id, e.target.value)}
@@ -256,7 +256,7 @@ export default function AdminBhwAccounts() {
                     </select>
                   </td>
 
-                  <td className="py-2 text-right pr-2">
+                  <td className="py-2 px-3 text-center">
                     <button
                       onClick={() => deleteAccount(acc._id)}
                       className={`${actionBtn} border-red-600 text-red-600 dark:text-red-400`}

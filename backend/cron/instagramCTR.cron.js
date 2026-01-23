@@ -103,7 +103,7 @@ cron.schedule("0 1 * * *", async () => {
               verifiedAt: new Date(),
             },
           },
-          { upsert: true }
+          { upsert: true },
         );
 
         continue;
@@ -165,7 +165,7 @@ cron.schedule("0 1 * * *", async () => {
             verifiedAt: new Date(),
           },
         },
-        { upsert: true }
+        { upsert: true },
       );
 
       console.log(`✅ CTR ${status.toUpperCase()} → ${username}`);
