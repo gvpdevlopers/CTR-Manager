@@ -1,6 +1,8 @@
 const express = require("express");
 const TaskExecution = require("../models/TaskExecution");
 const { protect } = require("../middlewares/authMiddleware");
+const BHWCTRCheck = require("../models/BhwCTRCheck");
+
 
 const router = express.Router();
 
@@ -11,6 +13,8 @@ router.post("/mark-done", protect, async (req, res) => {
   try {
     const { accountId, platform } = req.body;
     const employeeId = req.user._id;
+    console.log("CTR MARK DONE BODY:", req.body);
+
 
     if (!accountId) {
       return res.status(400).json({ message: "Missing accountId" });
@@ -20,9 +24,10 @@ router.post("/mark-done", protect, async (req, res) => {
       return res.status(400).json({ message: "Missing platform" });
     }
 
-    if (!["instagram", "reddit", "quora"].includes(platform)) {
-      return res.status(400).json({ message: "Invalid platform" });
-    }
+    if (!["instagram", "reddit", "quora", "bhw"].includes(platform)) {
+  return res.status(400).json({ message: "Invalid platform" });
+}
+
 
     const taskId = "daily_ctr";
 
@@ -50,6 +55,25 @@ router.post("/mark-done", protect, async (req, res) => {
       { upsert: true, new: true }
     );
 
+if (platform === "bhw") {
+  const today = new Date().toISOString().slice(0, 10);
+
+
+  await BHWCTRCheck.findOneAndUpdate(
+    { bhwAccountId: accountId, date: today },
+    {
+      status: "done_manual",
+      meta: {
+        fetchedAt: new Date(),
+        source: "employee",
+        error: null,
+      },
+    },
+    { upsert: true }
+  );
+}
+
+    
     return res.json({ success: true });
   } catch (err) {
     console.error("❌ MARK DONE ERROR:", err);

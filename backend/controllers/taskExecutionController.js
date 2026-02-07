@@ -11,19 +11,22 @@ exports.markTaskDone = async (req, res) => {
 
     const taskId = "daily_ctr";
 
-    await TaskExecution.updateOne(
-      { employeeId, accountId, taskId, taskDate },
-      {
-        $setOnInsert: {
-          employeeId,
-          accountId,
-          platform,
-          taskId,
-          taskDate,
-        },
-      },
-      { upsert: true }
-    );
+  await TaskExecution.updateOne(
+  { employeeId, accountId, taskId, taskDate },
+  {
+    $setOnInsert: {
+      employeeId,
+      accountId,
+      platform,
+      taskId,
+      taskDate,
+    },
+    $set: {
+      markedDoneAt: new Date(), // always ensure timestamp exists
+    },
+  },
+  { upsert: true }
+);
 
     return res.json({ success: true });
   } catch (err) {

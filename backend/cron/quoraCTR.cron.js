@@ -4,8 +4,7 @@ const QuoraCTRCheck = require("../models/QuoraCTRCheck");
 const { verifyQuoraCTR } = require("../services/quoraCTRVerify.service");
 
 function startQuoraCTRCron() {
-  // console.log("🕒 Starting Quora CTR Cron...");
-
+  // console.log("Starting Quora CTR Cron...");
   // cron.schedule("*/1 * * * *", async () => {
   // Runs once per day at 01:00 AM
   cron.schedule("0 1 * * *", async () => {

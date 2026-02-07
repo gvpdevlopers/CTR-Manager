@@ -52,6 +52,12 @@ const instagramCTRCheckSchema = new mongoose.Schema(
       posts: { type: Number, default: 0 },
     },
 
+    activityMeta: {
+  followingValidTill: { type: Date, default: null },
+  postValidTill: { type: Date, default: null },
+},
+
+
     status: {
       type: String,
       enum: ["done", "not_done", "suspicious"],

@@ -2,8 +2,11 @@ const express = require("express");
 const QuoraAccount = require("../models/QuoraAccount");
 const { fetchQuoraProfileData } = require("../services/quoraApify.service");
 const { protect, isAdmin } = require("../middlewares/authMiddleware");
+const { verifyQuoraNow } = require("../controllers/adminQuoraCTR.controller");
 
 const router = express.Router();
+
+router.post("/verify-now", protect, isAdmin, verifyQuoraNow);
 
 /* =========================
    CAPTURE QUORA BASELINE

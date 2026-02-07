@@ -12,7 +12,28 @@ const router = express.Router();
 
 router.get("/", protect, isAdmin, async (req, res) => {
   try {
-    const ctrChecks = await QuoraCTRCheck.find({})
+    const today = new Date().toLocaleDateString("en-CA");
+
+    // ⛔ Gate dashboard until verification runs
+const verifiedTodayExists = await QuoraCTRCheck.exists({
+  date: today,
+  "metadata.verifiedAt": { $exists: true },
+});
+
+if (!verifiedTodayExists) {
+  return res.json({
+    rows: [],
+    summary: {
+      total: 0,
+      done: 0,
+      suspicious: 0,
+      not_done: 0,
+      pending: 0,
+    },
+  });
+}
+
+    const ctrChecks = await QuoraCTRCheck.find({ date: today })
       .sort({ createdAt: -1 })
       .populate("employeeId", "fullName email")
       .populate("quoraAccountId", "userId")

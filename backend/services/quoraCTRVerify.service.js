@@ -109,7 +109,7 @@ async function verifyQuoraCTR(quoraAccountId, date) {
     );
   }
 
-  const { following, answers, questions, runId, lastAnswerDate } = apifyResult;
+  const { following, answers, questions, runId } = apifyResult;
 
   // 4️⃣ Defensive: reject silent zero results
   if (
@@ -148,34 +148,50 @@ async function verifyQuoraCTR(quoraAccountId, date) {
 
   // ============ 🔹 15-DAY RULE + 3-CONDITION LOGIC 🔹 ============
 
-  // (A) Answers condition → within last 15 days
   const now = new Date();
-  const fifteenDaysAgo = new Date();
-  fifteenDaysAgo.setDate(now.getDate() - 15);
 
-  const lastAnswer = lastAnswerDate ? new Date(lastAnswerDate) : null;
-  const answersDone = lastAnswer && lastAnswer >= fifteenDaysAgo;
+let followingValidTill = null;
+let answersValidTill = null;
+let questionsValidTill = null;
 
-  // (B) Following condition → must increase today
-  const followingDone = followingDelta > 0;
+// Following → 24 hours
+if (followingDelta > 0) {
+  followingValidTill = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+}
 
-  // (C) Questions condition → must increase today
-  const questionsDone = questionsDelta > 0;
+// Answers → 24 hours
+if (answersDelta > 0) {
+  answersValidTill = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+}
 
-  const trueCount =
-    (answersDone ? 1 : 0) + (followingDone ? 1 : 0) + (questionsDone ? 1 : 0);
+// Questions → 15 days
+if (questionsDelta > 0) {
+  questionsValidTill = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+}
 
-  let status = "not_done";
+ const answersDone =
+  answersValidTill && answersValidTill > now;
 
-  if (trueCount === 3) {
-    status = "done"; // All 3 true
-  } else if (trueCount === 2) {
-    status = "suspicious"; // Any 2 true
-  } else {
-    status = "not_done"; // 0 or 1 true
-  }
+const followingDone =
+  followingValidTill && followingValidTill > now;
+
+const questionsDone =
+  questionsValidTill && questionsValidTill > now;
+
+const trueCount =
+  (answersDone ? 1 : 0) +
+  (followingDone ? 1 : 0) +
+  (questionsDone ? 1 : 0);
 
   // ============ 🔹 WRITE CTR RECORD (UPSERT) 🔹 ============
+let status = "not_done";
+
+if (trueCount === 3) {
+  status = "done";
+} else if (trueCount === 2) {
+  status = "suspicious";
+}
+
 
   const ctrCheck = await QuoraCTRCheck.findOneAndUpdate(
     { quoraAccountId: account._id, date },
@@ -184,12 +200,15 @@ async function verifyQuoraCTR(quoraAccountId, date) {
         quoraAccountId: account._id,
         employeeId: taskExecution.employeeId,
         date,
-        expected: { minAnswers: 1, answerFrequencyDays: 15 },
+        expected: {
+  minAnswers24h: 1,
+  following24h: true,
+  questionFrequencyDays: 15,
+},
         actual: {
           answersBefore: account.baselineAnswers,
           answersAfter: answers,
           newAnswersCount: answersDelta,
-          lastAnswerDate: lastAnswer || null,
           upvotesDelta: 0,
 
           followingBefore: account.baselineFollowing,
@@ -200,6 +219,11 @@ async function verifyQuoraCTR(quoraAccountId, date) {
           questionsAfter: questions,
           questionsDelta,
         },
+         activityMeta: {
+  followingValidTill,
+  answersValidTill,
+  questionsValidTill,
+},
         status,
         metadata: { apifyRunId: runId, verifiedAt: new Date() },
       },

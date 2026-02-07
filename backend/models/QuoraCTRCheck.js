@@ -65,6 +65,13 @@ const quoraCTRCheckSchema = new mongoose.Schema(
       upvotesDelta: { type: Number, default: 0 },
     },
 
+    activityMeta: {
+  followingValidTill: { type: Date, default: null },
+  answersValidTill: { type: Date, default: null },
+  questionsValidTill: { type: Date, default: null },
+},
+
+
     /* ======================
        MANUAL DECLARATION
        (EMPLOYEE CHECKBOX)

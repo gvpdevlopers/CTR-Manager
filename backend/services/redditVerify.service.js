@@ -2,7 +2,7 @@ const RedditCTRCheck = require("../models/RedditCTRCheck");
 const axios = require("axios");
 
 const COMMENT_REQUIRED_24H = 2;
-const POST_VALID_DAYS = 5;
+const POST_VALID_DAYS = 15;
 const MS_24_HOURS = 24 * 60 * 60 * 1000;
 
 const isWithinLast24Hours = (utc) => Date.now() - utc * 1000 <= MS_24_HOURS;
@@ -51,7 +51,13 @@ async function verifyRedditCTR(ctrCheckId = null, { manual = false } = {}) {
     : await RedditCTRCheck.find({ date: today });
 
   for (const check of checks) {
-    const expectedComments = check.expected?.comments ?? 0;
+    const users = [
+  check.username1?.trim(),
+  check.username2?.trim(),
+].filter(Boolean);
+
+const expectedComments = users.length * COMMENT_REQUIRED_24H;
+
     const expectedPosts = check.expected?.posts ?? 0;
 
     let totalComments24h = 0;

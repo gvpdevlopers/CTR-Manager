@@ -73,6 +73,7 @@ app.use("/api/admin/instagram", adminInstagramRoutes);
 app.use("/api/admin", adminQuoraRoutes);
 app.use("/api/admin/quora/dashboard", adminQuoraDashboardRoutes);
 app.use("/api/admin/bhw", bhwCTRRoutes);
+app.use("/admin/bhw", require("./routes/adminBhw.routes"));
 
 // Health Check
 app.get("/", (req, res) => {

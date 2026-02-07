@@ -54,19 +54,19 @@ export default function RedditCTR() {
   /* =========================
      VERIFY NOW
   ========================= */
-  // const verifyNow = async () => {
-  //   if (!window.confirm("Verify Reddit CTR now?")) return;
+  const verifyNow = async () => {
+    if (!window.confirm("Verify Reddit CTR now?")) return;
 
-  //   try {
-  //     setLoading(true);
-  //     await API.post("/admin/reddit/verify-now");
-  //     await fetchCTRStatus();
-  //   } catch {
-  //     alert("Verification failed");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+    try {
+      setLoading(true);
+      await API.post("/admin/reddit/verify-now");
+      await fetchCTRStatus();
+    } catch {
+      alert("Verification failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* =========================
      STATUS STYLES
@@ -89,17 +89,17 @@ export default function RedditCTR() {
         <div className="flex gap-2">
           <button
             onClick={fetchCTRStatus}
-            className="px-4 py-2 rounded bg-gray-600 text-white"
+            className="px-4 py-2 rounded bg-gray-600 text-white cursor-pointer"
           >
             Refresh
           </button>
 
-          {/* <button
+          <button
             onClick={verifyNow}
-            className="px-4 py-2 rounded bg-blue-600 text-white"
+            className="px-4 py-2 rounded bg-blue-600 text-white cursor-pointer"
           >
             Verify Now
-          </button> */}
+          </button>
         </div>
       </div>
 
@@ -132,8 +132,8 @@ export default function RedditCTR() {
             <tr>
               <th className="px-4 py-3 text-left">Usernames</th>
               <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-center">Comments</th>
-              <th className="px-4 py-3 text-center">Posts</th>
+              <th className="px-4 py-3 text-center">Comments (24h)</th>
+              <th className="px-4 py-3 text-center">Posts (15d)</th>
               <th className="px-4 py-3 text-left">CTR Done By</th>
               <th className="px-4 py-3 text-left">Time</th>
             </tr>

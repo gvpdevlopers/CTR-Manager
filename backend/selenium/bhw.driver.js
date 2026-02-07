@@ -1,31 +1,38 @@
 const { Builder } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
-const fs = require("fs");
-const path = require("path");
 
-const PROFILE_PATH = "C:\\Users\\ADMIN\\bhw-playwright-profile";
-const SESSION_FILE = path.join(__dirname, "bhw.session.json");
+let driver; // long-living driver
 
 async function createDriver() {
-  const options = new chrome.Options();
+  if (driver) {
+    return driver;
+  }
 
+  console.log("🚀 Starting long-living Chrome session...");
+
+  const options = new chrome.Options();
   options.addArguments(
-    `user-data-dir=${PROFILE_PATH}`,
     "--start-maximized",
-    "--disable-blink-features=AutomationControlled",
+    "--disable-blink-features=AutomationControlled"
   );
 
-  const driver = await new Builder()
+  driver = await new Builder()
     .forBrowser("chrome")
     .setChromeOptions(options)
     .build();
 
+  console.log("✅ Chrome session ready");
   return driver;
 }
 
-async function saveSession(driver) {
-  const cookies = await driver.manage().getCookies();
-  fs.writeFileSync(SESSION_FILE, JSON.stringify(cookies, null, 2));
+function getDriver() {
+  if (!driver) {
+    throw new Error("Driver not initialized");
+  }
+  return driver;
 }
 
-module.exports = { createDriver, saveSession };
+module.exports = {
+  createDriver,
+  getDriver,
+};

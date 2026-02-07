@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 const BHWAccount = require("../models/BhwAccount");
 const BHWCTRCheck = require("../models/BhwCTRCheck");
+const TaskExecution = require("../models/TaskExecution"); // ✅ REQUIRED
 const { fetchBHWProfile } = require("../services/bhwService");
 
 function formatDate(d = new Date()) {
@@ -51,14 +52,25 @@ function startBHWCTRCron() {
           ? profile.threadsStarted - prev.snapshot.threadsStarted
           : 0;
 
+        // 🔒 CTR MUST EXIST
+        const hasCTR = await TaskExecution.exists({
+          accountId: acc._id,
+          platform: "bhw",
+          taskId: "daily_ctr",
+          taskDate: {
+            $gte: new Date(today),
+            $lte: new Date(today + "T23:59:59"),
+          },
+        });
+
         let status = "not_done";
 
-        // NEW logic: any meaningful activity counts
-        if (deltaMessages > 0 || deltaReaction > 0 || deltaThreads > 0) {
-          status = "partial";
-        }
-        if (deltaMessages > 0 && deltaReaction > 0) {
-          status = "done";
+        if (hasCTR) {
+          if (deltaMessages > 0 && deltaReaction > 0) {
+            status = "done";
+          } else if (deltaMessages > 0 || deltaReaction > 0 || deltaThreads > 0) {
+            status = "partial";
+          }
         }
 
         await BHWCTRCheck.findOneAndUpdate(
@@ -78,18 +90,17 @@ function startBHWCTRCron() {
               reactionScore: deltaReaction,
               threadsStarted: deltaThreads,
             },
-
             status,
             meta: {
               fetchedAt: new Date(),
               source: "bhw_profile",
             },
           },
-          { upsert: true },
+          { upsert: true }
         );
 
         console.log(
-          `✅ ${acc.usernameSlug}: +${deltaMessages} messages, +${deltaReaction} reactions → ${status}`,
+          `✅ ${acc.usernameSlug}: +${deltaMessages} messages, +${deltaReaction} reactions → ${status}`
         );
       } catch (err) {
         console.error(`❌ ${acc.usernameSlug} failed:`, err.message);
@@ -107,7 +118,7 @@ function startBHWCTRCron() {
               error: err.message,
             },
           },
-          { upsert: true },
+          { upsert: true }
         );
       }
     }

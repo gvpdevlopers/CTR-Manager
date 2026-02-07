@@ -35,6 +35,21 @@ export default function InstagramCTR() {
     fetchInstagramCTR();
   }, []);
 
+const verifyNow = async () => {
+  if (!window.confirm("Verify Instagram CTR now?")) return;
+
+  try {
+    setLoading(true);
+    await API.post("/admin/instagram/verify-now");
+    await fetchInstagramCTR();
+  } catch (err) {
+    alert("Verification failed", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   /* =========================
      FILTER LOGIC
   ========================= */
@@ -68,12 +83,21 @@ export default function InstagramCTR() {
           Instagram CTR Monitor
         </h1>
 
-        <button
+       <div>
+         <button
           onClick={fetchInstagramCTR}
-          className="px-4 py-2 rounded bg-gray-600 text-white"
+          className="px-4 py-2 mr-2 rounded bg-gray-600 text-white cursor-pointer"
         >
           Refresh
         </button>
+        <button
+  onClick={verifyNow}
+  className="px-4 py-2 rounded bg-blue-600 text-white cursor-pointer"
+>
+  Verify Now
+</button>
+       </div>
+
       </div>
 
       {/* SUMMARY */}

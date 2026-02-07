@@ -1,10 +1,11 @@
+
 const mongoose = require("mongoose");
 
 const bhwCTRCheckSchema = new mongoose.Schema(
   {
     bhwAccountId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "BHWAccount",
+      ref: "BhwAccount",
       required: true,
       index: true,
     },
@@ -24,27 +25,30 @@ const bhwCTRCheckSchema = new mongoose.Schema(
     snapshot: {
       messages: { type: Number, default: 0 },
       reactionScore: { type: Number, default: 0 },
-      threadsStarted: { type: Number, default: 0 }, // NEW
-      lastSeen: { type: String, default: null },
+      threadsStarted: { type: Number, default: 0 }, 
     },
 
     delta: {
       messages: { type: Number, default: 0 },
       reactionScore: { type: Number, default: 0 },
-      threadsStarted: { type: Number, default: 0 }, // NEW
+      threadsStarted: { type: Number, default: 0 }, 
     },
 
     status: {
       type: String,
-      enum: ["done", "partial", "not_done"],
+      enum: ["done", "partial", "not_done","pending", "done_manual"],
       default: "not_done",
     },
 
     meta: {
-      fetchedAt: { type: Date, default: Date.now },
+      fetchedAt: { type: Date, default: Date.now }, 
       source: { type: String, default: "bhw_profile" },
       error: { type: String, default: null },
     },
+
+    retryCount: { type: Number, default: 0 },
+
+    lastRetryAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

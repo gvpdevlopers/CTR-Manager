@@ -46,21 +46,22 @@ export default function BhwAccounts() {
   /* ======================
      MARK CTR DONE
   ====================== */
-  const markCtrDone = async (accountId) => {
-    if (ctrDoneMap[accountId]) return;
+ const markCtrDone = async (accountId) => {
+  if (ctrDoneMap[accountId]) return;
 
-    try {
-      await API.post("/ctr/mark-done", {
-        accountId,
-        date: new Date().toISOString().slice(0, 10),
-      });
+  try {
+    await API.post("/ctr/mark-done", {
+      accountId,
+      platform: "bhw", // ✅ REQUIRED
+    });
 
-      setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
-    } catch {
-      // backend is idempotent
-      setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
-    }
-  };
+    setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
+  } catch (err) {
+    console.error("Mark CTR failed", err);
+    // backend is idempotent → still mark UI
+    setCtrDoneMap((prev) => ({ ...prev, [accountId]: true }));
+  }
+};
 
   /* ======================
      STATUS CHANGE

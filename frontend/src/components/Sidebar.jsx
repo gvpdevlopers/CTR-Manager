@@ -53,6 +53,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <NavLink to="/admin/quora-ctr" className={linkClass}>
               Quora CTR
             </NavLink>
+            
+            <NavLink to="/admin/bhw-ctr" className={linkClass}>
+              BHW CTR
+            </NavLink>
 
             <NavLink to="/admin/add-accounts" className={linkClass}>
               Add Accounts
