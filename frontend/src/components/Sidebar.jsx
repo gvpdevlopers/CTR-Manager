@@ -30,7 +30,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         CTR Monitor
       </div>
       {/* Navigation */}
-      <nav className="p-4 flex flex-col gap-2 text-sm overflow-y-auto h-[calc(100vh-64px)]">
+      <nav className="p-4 flex flex-col gap-2 text-sm overflow-y-auto h-[calc(100vh-64px)] sidebar-scroll">
         {/* ADMIN LINKS */}
         {user?.role === "admin" && (
           <>

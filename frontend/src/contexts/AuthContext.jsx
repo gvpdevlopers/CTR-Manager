@@ -61,43 +61,40 @@ export const AuthProvider = ({ children }) => {
   /* ============================
      LOGIN
   ============================ */
-  const login = async ({ username, password }) => {
-    setLoading(true);
-    try {
-      const res = await API.post("/auth/login", { username, password });
+ const login = async ({ username, password }) => {
+  try {
+    const res = await API.post("/auth/login", { username, password });
 
-      const {
-        token: jwtToken,
-        role,
-        fullName,
-        username: uname,
-        _id,
-      } = res.data;
+    const {
+      token: jwtToken,
+      role,
+      fullName,
+      username: uname,
+      _id,
+    } = res.data;
 
-      const userObj = {
-        _id,
-        role,
-        fullName,
-        username: uname,
-      };
+    const userObj = {
+      _id,
+      role,
+      fullName,
+      username: uname,
+    };
 
-      // Persist
-      localStorage.setItem("token", jwtToken);
-      localStorage.setItem("user", JSON.stringify(userObj));
+    // Persist
+    localStorage.setItem("token", jwtToken);
+    localStorage.setItem("user", JSON.stringify(userObj));
 
-      setToken(jwtToken);
-      setUser(userObj);
+    setToken(jwtToken);
+    setUser(userObj);
 
-      return { ok: true, user: userObj };
-    } catch (err) {
-      return {
-        ok: false,
-        error: err?.response?.data?.message || "Login failed",
-      };
-    } finally {
-      setLoading(false);
-    }
-  };
+    return { ok: true, user: userObj };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err?.response?.data?.message || "Invalid username or password",
+    };
+  }
+};
 
   /* ============================
      LOGOUT
