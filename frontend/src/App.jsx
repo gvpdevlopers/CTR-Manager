@@ -1,5 +1,5 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
@@ -30,69 +30,60 @@ import InstagramCTR from "./pages/admin/InstagramCTR";
 import RedditCTR from "./pages/admin/RedditCTR";
 import QuoraCTR from "./pages/admin/QuoraCTR";
 import BhwCTR from "./pages/admin/BhwCTR";
-// import Employees from "./pages/admin/Employees";
-// import PlatformAccounts from "./pages/admin/PlatformAccounts";
-// import PlatformTasks from "./pages/admin/PlatformTasks";
-// import PlatformTasksView from "./pages/employee/PlatformTasksView";
+
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Login />} />
+        <Routes>
+          <Route path="/" element={<Login />} />
 
-            <Route
-              path="/admin/*"
-              element={
-                <ProtectedRoute>
-                  <AdminRoute>
-                    <AdminLayout />
-                  </AdminRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="employees" element={<AdminEmployees />} />
-              <Route path="add-accounts" element={<AdminAddAccounts />} />
-              <Route path="instagram-ctr" element={<InstagramCTR />} />
-              <Route path="reddit-ctr" element={<RedditCTR />} />
-              <Route path="quora-ctr" element={<QuoraCTR />} />
-              <Route path="bhw-ctr" element={<BhwCTR />} />
-              <Route path="instagram" element={<AdminInstagramAccounts />} />
-              <Route path="reddit" element={<AdminRedditAccounts />} />
-              <Route path="quora" element={<AdminQuoraAccounts />} />
-              <Route path="bhw" element={<AdminBhwAccounts />} />
-              <Route path="tasks" element={<AdminDailyTasks />} />
-              <Route path="keywords" element={<AdminKeywords />} />
-              {/* <Route path="employees" element={<Employees />} /> */}
-              {/* <Route path="accounts" element={<PlatformAccounts />} /> */}
-              {/* <Route path="tasks" element={<PlatformTasks />} /> */}
-            </Route>
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="employees" element={<AdminEmployees />} />
+            <Route path="add-accounts" element={<AdminAddAccounts />} />
+            <Route path="instagram-ctr" element={<InstagramCTR />} />
+            <Route path="reddit-ctr" element={<RedditCTR />} />
+            <Route path="quora-ctr" element={<QuoraCTR />} />
+            <Route path="bhw-ctr" element={<BhwCTR />} />
+            <Route path="instagram" element={<AdminInstagramAccounts />} />
+            <Route path="reddit" element={<AdminRedditAccounts />} />
+            <Route path="quora" element={<AdminQuoraAccounts />} />
+            <Route path="bhw" element={<AdminBhwAccounts />} />
+            <Route path="tasks" element={<AdminDailyTasks />} />
+            <Route path="keywords" element={<AdminKeywords />} />
+          </Route>
 
-            <Route
-              path="/employee/*"
-              element={
-                <ProtectedRoute>
-                  <EmployeeRoute>
-                    <EmployeeLayout />
-                  </EmployeeRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<EmployeeDashboard />} />
-              <Route path="accounts" element={<MyAccounts />} />
-              <Route path="add-accounts" element={<AddAccounts />} />
-              <Route path="instagram" element={<InstagramAccounts />} />
-              <Route path="reddit" element={<RedditAccounts />} />
-              {/* <Route path="tasks" element={<PlatformTasksView />} /> */}
-              <Route path="quora" element={<QuoraAccounts />} />
-              <Route path="bhw" element={<BhwAccounts />} />
-              <Route path="tasks" element={<DailyTasks />} />
-              <Route path="keywords" element={<Keywords />} />
-            </Route>
-          </Routes>
-        </Router>
+          <Route
+            path="/employee/*"
+            element={
+              <ProtectedRoute>
+                <EmployeeRoute>
+                  <EmployeeLayout />
+                </EmployeeRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<EmployeeDashboard />} />
+            <Route path="accounts" element={<MyAccounts />} />
+            <Route path="add-accounts" element={<AddAccounts />} />
+            <Route path="instagram" element={<InstagramAccounts />} />
+            <Route path="reddit" element={<RedditAccounts />} />
+            <Route path="quora" element={<QuoraAccounts />} />
+            <Route path="bhw" element={<BhwAccounts />} />
+            <Route path="tasks" element={<DailyTasks />} />
+            <Route path="keywords" element={<Keywords />} />
+          </Route>
+        </Routes>
       </ThemeProvider>
     </AuthProvider>
   );
