@@ -10,15 +10,20 @@ exports.verifyInstagramNow = async (req, res) => {
   try {
     const result = await runInstagramCTRVerification({ manual: true });
 
-    res.json({
+    return res.status(200).json({
+      success: true,
+      processed: result?.processed ?? 0,
       message: "Instagram CTR verification completed",
-      processed: result.processed,
     });
   } catch (err) {
     console.error("Manual Instagram verify error:", err);
-    res.status(500).json({ message: "Verification failed" });
+    return res.status(500).json({
+      success: false,
+      message: "Verification failed",
+    });
   }
 };
+
 
 
 exports.getAdminInstagramDashboard = async (req, res) => {

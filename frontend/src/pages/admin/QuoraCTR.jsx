@@ -20,15 +20,21 @@ const verifyNow = async () => {
 
   try {
     setLoading(true);
-    await API.post("/admin/verify-now");
+    const res = await API.post("/admin/verify-now");
+
+    if (res.data?.success === false) {
+      alert("Quora verification failed");
+      return;
+    }
+
     await fetchQuoraCTR();
   } catch (err) {
-    console.error("Quora verify failed", err);
-    alert("Quora verification failed");
+    alert("Quora verification failed",err);
   } finally {
     setLoading(false);
   }
 };
+
 
 
   const fetchQuoraCTR = async () => {

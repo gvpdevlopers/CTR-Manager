@@ -32,31 +32,23 @@ const instagramCTRCheckSchema = new mongoose.Schema(
     },
 
     snapshot: {
-      followers: { type: Number, default: 0 },
-      following: { type: Number, default: 0 },
-      posts: { type: Number, default: 0 },
-      verified: { type: Boolean, default: false },
-      isBusiness: { type: Boolean, default: false },
-      bio: { type: String },
-      profilePic: { type: String },
-    },
+  followers: Number,
+  following: Number,
+  posts: Number,
 
-    // deltas: {
-    //   followers: { type: Number, default: 0 },
-    //   posts: { type: Number, default: 0 },
-    // },
+  postMeta: [
+    {
+      postId: String,
+      createdAt: Date,
+    },
+  ],
+},
 
     deltas: {
       followers: { type: Number, default: 0 },
       following: { type: Number, default: 0 },
       posts: { type: Number, default: 0 },
     },
-
-    activityMeta: {
-  followingValidTill: { type: Date, default: null },
-  postValidTill: { type: Date, default: null },
-},
-
 
     status: {
       type: String,

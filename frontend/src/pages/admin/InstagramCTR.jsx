@@ -40,7 +40,13 @@ const verifyNow = async () => {
 
   try {
     setLoading(true);
-    await API.post("/admin/instagram/verify-now");
+    const res = await API.post("/admin/instagram/verify-now");
+
+    if (res.data?.success === false) {
+      alert("Verification failed");
+      return;
+    }
+
     await fetchInstagramCTR();
   } catch (err) {
     alert("Verification failed", err);

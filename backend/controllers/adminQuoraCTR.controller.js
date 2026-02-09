@@ -14,8 +14,8 @@ exports.verifyQuoraNow = async (req, res) => {
 
     for (const account of accounts) {
       try {
-        await verifyQuoraCTR(account._id, today);
-        verifiedCount++;
+        const result = await verifyQuoraCTR(account._id, today);
+        if (result) verifiedCount++;
       } catch (err) {
         console.error(
           `Quora manual verify failed for ${account._id}`,
@@ -24,12 +24,17 @@ exports.verifyQuoraNow = async (req, res) => {
       }
     }
 
-    return res.json({
-      message: "Quora verification completed",
+    return res.status(200).json({
+      success: true,
       verifiedCount,
+      message: "Quora verification completed",
     });
   } catch (err) {
     console.error("Manual Quora verify error:", err);
-    return res.status(500).json({ message: "Quora verification failed" });
+    return res.status(500).json({
+      success: false,
+      message: "Quora verification failed",
+    });
   }
 };
+
