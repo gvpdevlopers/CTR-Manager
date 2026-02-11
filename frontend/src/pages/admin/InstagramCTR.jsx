@@ -35,28 +35,26 @@ export default function InstagramCTR() {
     fetchInstagramCTR();
   }, []);
 
-const verifyNow = async () => {
-  if (!window.confirm("Verify Instagram CTR now?")) return;
+  const verifyNow = async () => {
+    if (!window.confirm("Verify Instagram CTR now?")) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const res = await API.post("/admin/instagram/verify-now");
+      const res = await API.post("/admin/instagram/verify-now");
 
-    alert(res.data?.message || "Verification started");
+      alert(res.data?.message || "Verification started");
 
-    // Wait few seconds before fetching updated data
-    setTimeout(() => {
-      fetchInstagramCTR();
-    }, 5000);
-
-  } catch (err) {
-    alert("Failed to start verification",err);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      // Wait few seconds before fetching updated data
+      setTimeout(() => {
+        fetchInstagramCTR();
+      }, 5000);
+    } catch (err) {
+      alert("Failed to start verification", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* =========================
      FILTER LOGIC
@@ -91,21 +89,20 @@ const verifyNow = async () => {
           Instagram CTR Monitor
         </h1>
 
-       <div>
-         <button
-          onClick={fetchInstagramCTR}
-          className="px-4 py-2 mr-2 rounded bg-gray-600 text-white cursor-pointer"
-        >
-          Refresh
-        </button>
-        <button
-  onClick={verifyNow}
-  className="px-4 py-2 rounded bg-blue-600 text-white cursor-pointer"
->
-  Verify Now
-</button>
-       </div>
-
+        <div>
+          <button
+            onClick={fetchInstagramCTR}
+            className="px-4 py-2 mr-2 rounded bg-gray-600 text-white cursor-pointer"
+          >
+            Refresh
+          </button>
+          <button
+            onClick={verifyNow}
+            className="px-4 py-2 rounded bg-blue-600 text-white cursor-pointer"
+          >
+            Verify Now
+          </button>
+        </div>
       </div>
 
       {/* SUMMARY */}

@@ -15,28 +15,26 @@ export default function QuoraCTR() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-const verifyNow = async () => {
-  if (!window.confirm("Verify Quora CTR now?")) return;
+  const verifyNow = async () => {
+    if (!window.confirm("Verify Quora CTR now?")) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const res = await API.post("/admin/quora/verify-now");
+      const res = await API.post("/admin/verify-now");
 
-    alert(res.data?.message || "Verification started");
+      alert(res.data?.message || "Verification started");
 
-    // wait 5 seconds then refresh data
-    setTimeout(() => {
-      fetchQuoraCTR();
-    }, 5000);
-
-  } catch (err) {
-    alert("Failed to start verification", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      // wait 5 seconds then refresh data
+      setTimeout(() => {
+        fetchQuoraCTR();
+      }, 5000);
+    } catch (err) {
+      alert("Failed to start verification", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchQuoraCTR = async () => {
     try {
@@ -44,20 +42,19 @@ const verifyNow = async () => {
       const res = await API.get("/admin/quora/dashboard");
 
       const normalizedRows = (res.data.rows || []).map((row) => ({
-  ...row,
+        ...row,
 
-  following: row.following ?? 0,
-  answers: row.answers ?? "0 / 1",
-  questions: row.questions ?? 0,
+        following: row.following ?? 0,
+        answers: row.answers ?? "0 / 1",
+        questions: row.questions ?? 0,
 
-  // validity (new)
-  followingValidTill: row.activityMeta?.followingValidTill || null,
-  answersValidTill: row.activityMeta?.answersValidTill || null,
-  questionsValidTill: row.activityMeta?.questionsValidTill || null,
+        // validity (new)
+        followingValidTill: row.activityMeta?.followingValidTill || null,
+        answersValidTill: row.activityMeta?.answersValidTill || null,
+        questionsValidTill: row.activityMeta?.questionsValidTill || null,
 
-  verifiedAt: row.verifiedAt || row.createdAt || null,
-}));
-
+        verifiedAt: row.verifiedAt || row.createdAt || null,
+      }));
 
       setRows(normalizedRows);
       setSummary({
@@ -98,27 +95,25 @@ const verifyNow = async () => {
     pending: "bg-gray-200 text-gray-700 dark:bg-gray-800/60 dark:text-gray-300",
   };
 
-const renderValidTill = (validTill, label) => {
-  if (!validTill) return null;
+  const renderValidTill = (validTill, label) => {
+    if (!validTill) return null;
 
-  const expired = new Date(validTill) < new Date();
+    const expired = new Date(validTill) < new Date();
 
-  return (
-    <span className="relative group ml-1 cursor-help text-xs">
-      ⏱
-      <span
-        className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded px-2 py-1 text-xs text-white ${
-          expired ? "bg-red-600" : "bg-black"
-        } opacity-0 group-hover:opacity-100 transition z-50`}
-      >
-        {label} valid till{" "}
-        {new Date(validTill).toLocaleString()}
-        {expired ? " (expired)" : ""}
+    return (
+      <span className="relative group ml-1 cursor-help text-xs">
+        ⏱
+        <span
+          className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded px-2 py-1 text-xs text-white ${
+            expired ? "bg-red-600" : "bg-black"
+          } opacity-0 group-hover:opacity-100 transition z-50`}
+        >
+          {label} valid till {new Date(validTill).toLocaleString()}
+          {expired ? " (expired)" : ""}
+        </span>
       </span>
-    </span>
-  );
-};
-
+    );
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -129,21 +124,20 @@ const renderValidTill = (validTill, label) => {
         </h1>
 
         <div className="flex gap-2">
-  <button
-    onClick={fetchQuoraCTR}
-    className="px-4 py-2 rounded cursor-pointer bg-gray-700 text-white hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
-  >
-    Refresh
-  </button>
+          <button
+            onClick={fetchQuoraCTR}
+            className="px-4 py-2 rounded cursor-pointer bg-gray-700 text-white hover:bg-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700"
+          >
+            Refresh
+          </button>
 
-  <button
-    onClick={verifyNow}
-    className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
-  >
-    Verify Now
-  </button>
-</div>
-
+          <button
+            onClick={verifyNow}
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+          >
+            Verify Now
+          </button>
+        </div>
       </div>
 
       {/* SUMMARY CARDS (FIXED FOR DARK MODE) */}
@@ -231,18 +225,18 @@ const renderValidTill = (validTill, label) => {
                       {row.status.toUpperCase()}
                     </span>
                   </td>
-                 <td className="px-4 py-3 text-center">
-  {row.following}
-  {renderValidTill(row.followingValidTill, "Following")}
-</td> 
                   <td className="px-4 py-3 text-center">
-  {row.answers}
-  {renderValidTill(row.answersValidTill, "Answers")}
-</td>
+                    {row.following}
+                    {renderValidTill(row.followingValidTill, "Following")}
+                  </td>
                   <td className="px-4 py-3 text-center">
-  {row.questions}
-  {renderValidTill(row.questionsValidTill, "Questions")}
-</td>
+                    {row.answers}
+                    {renderValidTill(row.answersValidTill, "Answers")}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {row.questions}
+                    {renderValidTill(row.questionsValidTill, "Questions")}
+                  </td>
 
                   <td className="px-4 py-3">{row.ctrDoneBy || "—"}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">

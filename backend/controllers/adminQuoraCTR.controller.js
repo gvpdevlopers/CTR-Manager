@@ -3,14 +3,22 @@ const { verifyQuoraCTR } = require("../services/quoraCTRVerify.service");
 
 exports.verifyQuoraNow = async (req, res) => {
   try {
-    // DO NOT await (prevents timeout)
-    runQuoraCTRVerification({ manual: true })
-      .then(result => {
-        console.log("Manual Quora verification finished:", result);
-      })
-      .catch(err => {
-        console.error("Manual Quora verification error:", err);
-      });
+    const today = new Date().toISOString().slice(0, 10);
+
+    const accounts = await QuoraAccount.find({
+      verificationEnabled: { $ne: false },
+    });
+
+    // Run async without blocking response
+    accounts.forEach(account => {
+      verifyQuoraCTR(account._id, today)
+        .then(() => {
+          console.log("Verified:", account.userId);
+        })
+        .catch(err => {
+          console.error("Verification error:", account.userId, err.message);
+        });
+    });
 
     return res.status(200).json({
       success: true,
@@ -26,5 +34,3 @@ exports.verifyQuoraNow = async (req, res) => {
     });
   }
 };
-
-

@@ -40,30 +40,29 @@ export default function AdminBhwCTR() {
   };
 
   const handleRetry = async (bhwAccountId) => {
-  try {
-    setRetryingId(bhwAccountId);
+    try {
+      setRetryingId(bhwAccountId);
 
-    await API.post(
-      `/admin/bhw/run/${bhwAccountId}`,
-      {},
-      { timeout: 120000 } // 🔒 2 minutes
-    );
-
-    await fetchBhwCTR();
-  } catch (err) {
-    if (err.response?.status === 429) {
-      alert("Retry cooldown active. Please wait.");
-    } else {
-      alert(
-        err.response?.data?.error ||
-          "Retry failed. Please wait, Selenium may still be running."
+      await API.post(
+        `/admin/bhw/run/${bhwAccountId}`,
+        {},
+        { timeout: 120000 }, // 🔒 2 minutes
       );
-    }
-  } finally {
-    setRetryingId(null);
-  }
-};
 
+      await fetchBhwCTR();
+    } catch (err) {
+      if (err.response?.status === 429) {
+        alert("Retry cooldown active. Please wait.");
+      } else {
+        alert(
+          err.response?.data?.error ||
+            "Retry failed. Please wait, Selenium may still be running.",
+        );
+      }
+    } finally {
+      setRetryingId(null);
+    }
+  };
 
   const filteredRows = rows.filter((row) => {
     const q = search.toLowerCase();
@@ -219,7 +218,7 @@ export default function AdminBhwCTR() {
                     </td>
 
                     <td className="px-4 py-3 text-center">
-                      {row.delta?.messages > 0 ? "3 / 3" : "0 / 1"}
+                      {`${row.delta?.messages ?? 0} / 2`}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {row.snapshot?.reactionScore ?? 0}
