@@ -3,12 +3,16 @@ import API from "../../services/api";
 
 export default function RedditCTR() {
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState({
+    total: 0,
+    done: 0,
+    suspicious: 0,
+    not_done: 0,
+  });
 
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
-
-  const COMMENT_REQUIRED_TODAY = 2;
 
   /* =========================
      FETCH DATA
@@ -18,8 +22,9 @@ export default function RedditCTR() {
       setLoading(true);
 
       const res = await API.get("/admin/reddit/ctr-status");
-      console.log(" FRONTEND RAW DATA:", res.data);
-      setData(res.data || []);
+
+      setData(res.data.rows || []);
+      setSummary(res.data.summary || {});
     } catch (err) {
       console.error("Failed to load Reddit CTR data", err);
 
@@ -39,14 +44,15 @@ export default function RedditCTR() {
      FILTER LOGIC
   ========================= */
   const filteredData = data.filter((row) => {
-    const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || row.status === statusFilter;
 
     const q = search.toLowerCase();
 
     const matchesSearch =
-      row.usernames.user1?.toLowerCase().includes(q) ||
-      row.usernames.user2?.toLowerCase().includes(q) ||
-      row.clickedBy?.name?.toLowerCase().includes(q);
+      row.usernames?.user1?.toLowerCase().includes(q) ||
+      row.usernames?.user2?.toLowerCase().includes(q) ||
+      row.ctrDoneBy?.toLowerCase().includes(q);
 
     return matchesStatus && matchesSearch;
   });
@@ -80,7 +86,7 @@ export default function RedditCTR() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
           Reddit CTR Monitor
@@ -103,7 +109,23 @@ export default function RedditCTR() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* SUMMARY CARDS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <SummaryCard label="Total" value={summary.total} />
+        <SummaryCard label="Done" value={summary.done} color="green" />
+        <SummaryCard
+          label="Suspicious"
+          value={summary.suspicious}
+          color="yellow"
+        />
+        <SummaryCard
+          label="Not Done"
+          value={summary.not_done}
+          color="red"
+        />
+      </div>
+
+      {/* FILTERS */}
       <div className="flex flex-col md:flex-row gap-4">
         <input
           type="text"
@@ -125,7 +147,7 @@ export default function RedditCTR() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* TABLE */}
       <div className="overflow-x-auto rounded-lg border dark:border-gray-700">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
@@ -153,86 +175,88 @@ export default function RedditCTR() {
                 </td>
               </tr>
             ) : (
-              filteredData.map((row) => {
-                return (
-                  <tr
-                    key={row.ctrCheckId}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{row.usernames.user1}</div>
-                      <div className="text-xs text-gray-500">
-                        {row.usernames.user2}
-                      </div>
-                    </td>
+              filteredData.map((row) => (
+                <tr
+                  key={row.ctrCheckId}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <td className="px-4 py-3">
+                    <div className="font-medium">
+                      {row.usernames?.user1}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {row.usernames?.user2}
+                    </div>
+                  </td>
 
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          statusStyles[row.status]
-                        }`}
-                      >
-                        {row.status.replaceAll("_", " ").toUpperCase()}
+                  <td className="px-4 py-3">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        statusStyles[row.status]
+                      }`}
+                    >
+                      {row.status.replaceAll("_", " ").toUpperCase()}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3 text-center font-medium">
+                    {row.actual?.comments24h ?? 0} /{" "}
+                    {row.actual?.commentsRequired ?? 0}
+                    <div className="text-xs text-gray-500">
+                      {row.actual?.breakdown?.user1?.comments24h ?? 0} +{" "}
+                      {row.actual?.breakdown?.user2?.comments24h ?? 0}
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-3 text-center">
+                    {row.actual?.postValidTill ? (
+                      <span className="font-medium text-green-600">
+                        1 / 1
                       </span>
-                    </td>
+                    ) : (
+                      <span className="text-gray-400">0 / 1</span>
+                    )}
+                  </td>
 
-                    {/* COMMENTS */}
-                    <td className="px-4 py-3 text-center font-medium">
-                      {row.actual?.comments24h ?? 0} /{" "}
-                      {row.actual?.commentsRequired ?? 0}
-                      <div className="text-xs text-gray-500">
-                        {row.actual?.breakdown?.user1?.comments24h ?? 0} +{" "}
-                        {row.actual?.breakdown?.user2?.comments24h ?? 0}
-                      </div>
-                    </td>
+                  <td className="px-4 py-3">
+                    {row.ctrDoneBy || "—"}
+                  </td>
 
-                    {/* POSTS */}
-                    <td className="px-4 py-3 text-center">
-                      {row.actual?.postValidTill ? (
-                        <span className="relative group cursor-help font-medium text-green-600">
-                          1 / 1
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition z-50">
-                            Post valid till{" "}
-                            {new Date(
-                              row.actual.postValidTill
-                            ).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">0 / 1</span>
-                      )}
-                    </td>
-
-                    {/* CTR DONE BY */}
-                    <td className="px-4 py-3">
-                      <div className="font-medium">
-                        {row.clickedBy?.name || "—"}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {row.clickedBy?.email}
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      {new Date(row.clickedAt).toLocaleString("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                        day: "2-digit",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                  </tr>
-                );
-              })
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    {row.clickedAt
+                      ? new Date(row.clickedAt).toLocaleString()
+                      : "—"}
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/* =========================
+   SUMMARY CARD
+========================= */
+function SummaryCard({ label, value, color }) {
+  const colors = {
+    green: "text-green-600 dark:text-green-400",
+    yellow: "text-yellow-600 dark:text-yellow-400",
+    red: "text-red-600 dark:text-red-400",
+  };
+
+  return (
+    <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border dark:border-gray-700">
+      <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
+      <p
+        className={`text-2xl font-semibold ${
+          colors[color] || "text-gray-900 dark:text-gray-100"
+        }`}
+      >
+        {value ?? 0}
+      </p>
     </div>
   );
 }

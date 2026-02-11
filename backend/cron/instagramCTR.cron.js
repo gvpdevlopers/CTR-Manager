@@ -103,24 +103,23 @@ async function runInstagramCTRVerification({ manual = false } = {}) {
         data.followsCount - baseline.snapshot.following;
     }
 
-    /* ---------- POST DELTA (STEP C) ---------- */
-    const previousPosts = baseline.snapshot.postMeta || [];
-
-    const newPosts = currentPosts.filter(
-  p =>
-    !previousPosts.some(bp => bp.postId === p.postId) &&
-    now - p.createdAt <= FIFTEEN_DAYS
+/* ---------- POST DELTA ---------- */
+// Only count posts created within last 15 days
+const validPosts = currentPosts.filter(
+  p => now - new Date(p.createdAt) <= FIFTEEN_DAYS
 );
 
+const postChange = validPosts.length;
 
-    const postChange = newPosts.length;
+// Store only latest posts from scraper (no historical growth)
+const mergedPosts = currentPosts;
 
-    /* ---------- POST VALIDITY (STEP D) ---------- */
-    const validNewPosts = newPosts.filter(
-      p => now - p.createdAt <= FIFTEEN_DAYS
-    );
 
-    const postValid = validNewPosts.length > 0;
+
+// Check if ANY post is within 15 days
+const postValid = mergedPosts.some(
+  p => now - new Date(p.createdAt) <= FIFTEEN_DAYS
+);
 
     /* ---------- FOLLOWING VALIDITY ---------- */
     const followingValid =
@@ -145,7 +144,7 @@ async function runInstagramCTRVerification({ manual = false } = {}) {
     }
 
     /* ---------- MERGE POSTS (STEP E) ---------- */
-    const mergedPosts = [...previousPosts, ...newPosts];
+    // const mergedPosts = [...previousPosts, ...newPosts];
 
     /* ---------- SAVE ---------- */
     await InstagramCTRCheck.updateOne(

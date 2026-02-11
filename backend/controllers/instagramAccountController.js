@@ -4,12 +4,13 @@ const json2csv = require("json2csv").parse;
 // ✅ EMPLOYEE / ADMIN — CREATE SINGLE ACCOUNT
 exports.createInstagramAccount = async (req, res) => {
   try {
-    const { name, username, password, link } = req.body;
+    const { name, username, userId, password, link } = req.body;
 
     const account = await InstagramAccount.create({
       ownedBy: req.user._id,
       name,
       username,
+      userId,
       password,
       link,
     });
@@ -62,7 +63,7 @@ exports.getAllInstagramAccounts = async (req, res) => {
 // ✅ EMPLOYEE / ADMIN — INLINE UPDATE (FIXED)
 exports.updateInstagramAccount = async (req, res) => {
   try {
-    const allowedFields = ["name", "username", "password", "link", "status"];
+    const allowedFields = ["name", "username","userId", "password", "link", "status"];
 
     const updates = {};
     for (const key of allowedFields) {

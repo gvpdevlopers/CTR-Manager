@@ -90,8 +90,8 @@ export default function AdminAddAccounts() {
         let payload = {};
 
         if (platform === "instagram") {
-          const [name, username, password, link, ownerId] = values;
-          payload = { name, username, password, link };
+          const [name, username,userId, password, link, ownerId] = values;
+          payload = { name, username,userId, password, link };
           if (ownerId) payload.ownerEmployeeId = ownerId;
         }
 
@@ -203,6 +203,13 @@ export default function AdminAddAccounts() {
               value={form.username || ""}
               onChange={handleChange}
               placeholder="Username"
+              className={inputClass}
+            />
+            <input
+              name="userId"
+              value={form.userId || ""}
+              onChange={handleChange}
+              placeholder="User ID"
               className={inputClass}
             />
             <input

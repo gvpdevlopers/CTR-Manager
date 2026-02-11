@@ -148,6 +148,7 @@ export default function AdminInstagramAccounts() {
           <thead className="bg-gray-100 dark:bg-gray-900">
             <tr className="text-left text-gray-700 dark:text-gray-300">
               <th className="py-2 px-2">Sr</th>
+              <th>User ID</th>
               <th>Name</th>
               <th>Username</th>
               <th>Password</th>
@@ -180,6 +181,16 @@ export default function AdminInstagramAccounts() {
                   <td className="px-2 py-2 text-gray-900 dark:text-gray-100">
                     {i + 1}
                   </td>
+                  <td className="py-2">
+                    <input
+                      defaultValue={acc.userId}
+                      placeholder="—"
+                      onBlur={(e) =>
+                        updateField(acc._id, "userId", e.target.value)
+                      }
+                      className={inputInline}
+                    />
+                  </td>
 
                   <td className="py-2">
                     <input
@@ -189,8 +200,8 @@ export default function AdminInstagramAccounts() {
                           prev.map((a) =>
                             a._id === acc._id
                               ? { ...a, name: e.target.value }
-                              : a
-                          )
+                              : a,
+                          ),
                         )
                       }
                       onBlur={(e) =>

@@ -12,6 +12,12 @@ const instagramAccountSchema = new mongoose.Schema(
     username: { type: String, required: true },
     password: { type: String, required: true },
     link: { type: String, required: true },
+    userId: {
+  type: Number,
+  required: true,
+  unique: true,
+},
+
 
     status: {
       type: String,

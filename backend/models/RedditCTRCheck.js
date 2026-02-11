@@ -51,6 +51,10 @@ const redditCTRCheckSchema = new mongoose.Schema(
       enum: ["done", "suspicious", "not_done"],
       default: "not_done",
     },
+    verifiedAt: {
+    type: Date,
+    default: null,
+  },
 
     notes: String,
   },

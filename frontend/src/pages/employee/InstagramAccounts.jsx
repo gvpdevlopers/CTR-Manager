@@ -125,6 +125,7 @@ export default function InstagramAccounts() {
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr className="text-gray-700 dark:text-gray-100">
               <th className="py-2 px-3 text-left">Sr</th>
+              <th>User ID</th>
               <th className="py-2 px-3 text-left">Name</th>
               <th className="py-2 px-3 text-left">Username</th>
               <th className="py-2 px-3 text-left">Password</th>
@@ -157,6 +158,7 @@ export default function InstagramAccounts() {
         "
                 >
                   <td className="py-2 px-3">{index + 1}</td>
+                  <td className="py-2 px-3">{acc.userId || "—"}</td>
                   <td className="py-2 px-3">{acc.name || "—"}</td>
                   <td className="py-2 px-3">{acc.username}</td>
                   <td className="py-2 px-3">{acc.password}</td>

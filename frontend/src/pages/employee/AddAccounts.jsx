@@ -80,8 +80,8 @@ export default function AddAccounts() {
         let payload = {};
 
         if (platform === "instagram") {
-          const [name, username, password, link] = v;
-          payload = { name, username, password, link };
+          const [name, username, userId, password, link] = v;
+          payload = { name, username, userId, password, link };
         }
 
         if (platform === "reddit" || platform === "quora") {
@@ -175,6 +175,13 @@ export default function AddAccounts() {
               className={inputClass}
               onChange={handleChange}
               value={form.username || ""}
+            />
+            <input
+              name="userId"
+              placeholder="User ID"
+              className={inputClass}
+              onChange={handleChange}
+              value={form.userId || ""}
             />
             <input
               name="password"

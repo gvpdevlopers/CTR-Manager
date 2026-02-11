@@ -164,7 +164,7 @@ const expectedComments = users.length * COMMENT_REQUIRED_24H;
       ) {
         check.status = "done";
       }
-
+      check.verifiedAt = new Date();
       await check.save();
     } catch (err) {
       console.error("Unexpected verify error:", err.message);

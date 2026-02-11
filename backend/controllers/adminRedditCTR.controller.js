@@ -5,44 +5,43 @@ exports.getTodayRedditCTRStatus = async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
 
-    const ctrChecks = await RedditCTRCheck.find({ date: today })
+    const ctrChecks = await RedditCTRCheck.find({
+  date: today,
+  verifiedAt: { $ne: null },
+})
       .populate("employeeId", "fullName email")
       .populate("redditAccountId")
       .sort({ createdAt: -1 });
 
-    const response = ctrChecks.map((check) => ({
+    const rows = ctrChecks.map((check, index) => ({
+      sr: index + 1,
       ctrCheckId: check._id,
 
-      redditAccountId: check.redditAccountId?._id,
       usernames: {
         user1: check.username1,
         user2: check.username2,
       },
 
-      status: check.status, // done | suspicious | not_done
+      status: check.status,
 
       actual: check.actual,
 
-      clickedBy: {
-        employeeId: check.employeeId?._id,
-        name: check.employeeId?.fullName,
-        email: check.employeeId?.email,
-      },
+      ctrDoneBy: check.employeeId?.fullName || "—",
+      email: check.employeeId?.email || null,
 
       clickedAt: check.createdAt,
       lastVerifiedAt: check.updatedAt,
     }));
 
-    // console.log("📤 CTR STATUS API RESPONSE:");
-    response.forEach((row) => {
-      console.log({
-        usernames: row.usernames,
-        status: row.status,
-        actual: row.actual,
-      });
-    });
+    const summary = {
+      total: rows.length,
+      done: rows.filter(r => r.status === "done").length,
+      suspicious: rows.filter(r => r.status === "suspicious").length,
+      not_done: rows.filter(r => r.status === "not_done").length,
+    };
 
-    res.json(response);
+    return res.json({ summary, rows });
+
   } catch (error) {
     console.error("Admin CTR fetch error:", error);
     res.status(500).json({ message: "Failed to fetch CTR status" });
