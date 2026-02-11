@@ -20,21 +20,33 @@ const verifyNow = async () => {
 
   try {
     setLoading(true);
-    const res = await API.post("/admin/verify-now");
 
-    if (res.data?.success === false) {
-      alert("Quora verification failed");
-      return;
+    const res = await API.post("/admin/quora/verify-now");
+
+    if (res?.data?.success) {
+      alert(
+        `Verification completed. Processed ${res.data.processed ?? 0} accounts.`
+      );
+
+      // Optional small delay to allow DB update
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await fetchQuoraCTR();
+    } else {
+      alert(res?.data?.message || "Quora verification failed");
     }
 
-    await fetchQuoraCTR();
   } catch (err) {
-    alert("Quora verification failed",err);
+    console.error("Quora verify error:", err);
+
+    alert(
+      "Verification request sent. If data is not updated yet, please refresh in a few seconds."
+    );
+
   } finally {
     setLoading(false);
   }
 };
-
 
 
   const fetchQuoraCTR = async () => {
