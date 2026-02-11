@@ -43,25 +43,15 @@ const verifyNow = async () => {
 
     const res = await API.post("/admin/instagram/verify-now");
 
-    if (res?.data?.success) {
-      // Optional success message
-      alert(
-        `Verification completed. Processed ${res.data.processed ?? 0} accounts.`
-      );
+    alert(res.data?.message || "Verification started");
 
-      await fetchInstagramCTR();
-    } else {
-      alert(res?.data?.message || "Verification failed");
-    }
+    // Wait few seconds before fetching updated data
+    setTimeout(() => {
+      fetchInstagramCTR();
+    }, 5000);
 
   } catch (err) {
-    console.error("Verify error:", err);
-
-    // Better fallback message instead of false failure
-    alert(
-      "Verification request sent. If data is not updated yet, please refresh in a few seconds."
-    );
-
+    alert("Failed to start verification",err);
   } finally {
     setLoading(false);
   }

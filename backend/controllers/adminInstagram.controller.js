@@ -8,21 +8,29 @@ function getTodayDate() {
 
 exports.verifyInstagramNow = async (req, res) => {
   try {
-    const result = await runInstagramCTRVerification({ manual: true });
+    // Start verification but DO NOT await it
+    runInstagramCTRVerification({ manual: true })
+      .then(result => {
+        console.log("Manual verification finished:", result);
+      })
+      .catch(err => {
+        console.error("Manual verification error:", err);
+      });
 
     return res.status(200).json({
       success: true,
-      processed: result?.processed ?? 0,
-      message: "Instagram CTR verification completed",
+      message: "Verification started. Please refresh after a few seconds.",
     });
+
   } catch (err) {
     console.error("Manual Instagram verify error:", err);
     return res.status(500).json({
       success: false,
-      message: "Verification failed",
+      message: "Failed to start verification",
     });
   }
 };
+
 
 
 
