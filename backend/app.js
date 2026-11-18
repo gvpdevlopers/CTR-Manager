@@ -80,7 +80,8 @@ app.get("/", (req, res) => {
   res.send("CTR Monitor Backend Running ");
 });
 
-startRedditCTRCron();
+// Reddit CTR verification is paused; restore this call when it resumes.
+// startRedditCTRCron();
 startQuoraCTRCron();
 // startInstagramCTRCron();
 // startBHWCTRCron();

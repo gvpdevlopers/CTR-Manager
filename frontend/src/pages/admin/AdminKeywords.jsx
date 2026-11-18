@@ -1,3 +1,4 @@
+import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 
@@ -37,7 +38,7 @@ export default function AdminKeywords() {
   const fetchKeywords = async () => {
     try {
       const res = await API.get("/keywords");
-      setKeywords(res.data || []);
+      setKeywords((res.data || []).filter((item) => isVisiblePlatform(item.platform)));
     } catch {
       showToast("error", "Failed to load keywords");
     }
@@ -187,7 +188,7 @@ export default function AdminKeywords() {
             <option value="instagram">Instagram</option>
             <option value="reddit">Reddit</option>
             <option value="quora">Quora</option>
-            <option value="bhw">BHW</option>
+            {BHW_ENABLED && <option value="bhw">BHW</option>}
           </select>
 
           <button
@@ -244,7 +245,7 @@ reddit karma`}
           <option value="instagram">Instagram</option>
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
-          <option value="bhw">BHW</option>
+          {BHW_ENABLED && <option value="bhw">BHW</option>}
         </select>
       </div>
 

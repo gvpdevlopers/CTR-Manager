@@ -1,3 +1,4 @@
+import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 // src/pages/employee/Keywords.jsx
 import { useEffect, useState } from "react";
 import API from "../../services/api";
@@ -19,7 +20,7 @@ export default function Keywords() {
       setError("");
 
       const res = await API.get(KEYWORD_API);
-      setKeywords(res.data || []);
+      setKeywords((res.data || []).filter((item) => isVisiblePlatform(item.platform)));
     } catch (err) {
       console.error(err);
       setError("Failed to load keywords.");
@@ -63,7 +64,7 @@ export default function Keywords() {
           <option value="instagram">Instagram</option>
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
-          <option value="bhw">BHW</option>
+          {BHW_ENABLED && <option value="bhw">BHW</option>}
         </select>
       </div>
 

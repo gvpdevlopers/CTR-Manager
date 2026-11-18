@@ -1,3 +1,4 @@
+import { isVisiblePlatform } from "../../config/platforms";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 import AddAccountForm from "../../components/employee/AddAccountForm";
@@ -11,7 +12,7 @@ export default function MyAccounts() {
     try {
       setLoading(true);
       const res = await API.get("/platform-accounts/me");
-      setAccounts(res.data);
+      setAccounts(res.data.filter((account) => isVisiblePlatform(account.platform)));
       setLoading(false);
     } catch (err) {
       alert("Failed to load accounts");
@@ -62,7 +63,7 @@ export default function MyAccounts() {
         {loading ? (
           <p className="dark:text-white">Loading...</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead>
               <tr className="border-b dark:text-white">
                 <th>Platform</th>
@@ -107,7 +108,7 @@ export default function MyAccounts() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { BHW_ENABLED } from "../../config/platforms";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 
@@ -37,7 +38,7 @@ export default function EmployeeDashboard() {
         API.get("/instagram-accounts"),
         API.get("/reddit-accounts"),
         API.get("/quora-accounts"),
-        API.get("/bhw-accounts"),
+        BHW_ENABLED ? API.get("/bhw-accounts") : Promise.resolve({ data: [] }),
       ]);
 
       const allAccounts = [
@@ -145,9 +146,9 @@ export default function EmployeeDashboard() {
 
 function StatCard({ label, value, color }) {
   const colorMap = {
-    green: "text-green-600",
-    yellow: "text-yellow-600",
-    red: "text-red-600",
+    green: "text-green-700 dark:text-green-300",
+    yellow: "text-yellow-700 dark:text-yellow-300",
+    red: "text-red-700 dark:text-red-300",
   };
 
   return (
@@ -166,9 +167,9 @@ function StatCard({ label, value, color }) {
 
 function StatusBadge({ status }) {
   const map = {
-    working: "bg-green-100 text-green-700",
-    suspicious: "bg-yellow-100 text-yellow-800",
-    not_working: "bg-red-100 text-red-700",
+    working: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300",
+    suspicious: "bg-yellow-100 text-yellow-800 dark:bg-yellow-400/20 dark:text-yellow-300",
+    not_working: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
   };
 
   return (

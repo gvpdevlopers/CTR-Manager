@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
+import { REDDIT_CTR_ENABLED } from "../../config/platforms";
 
 export default function RedditAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -42,7 +43,7 @@ export default function RedditAccounts() {
 
   useEffect(() => {
     fetchAccounts();
-    fetchTodayCtr();
+    if (REDDIT_CTR_ENABLED) fetchTodayCtr();
   }, []);
 
   /* ======================
@@ -165,20 +166,20 @@ export default function RedditAccounts() {
               <th className="py-2 px-1">Email 2</th>
               <th className="py-2 px-1">Pass 2</th>
               <th className="py-2 px-1">Status</th>
-              <th className="py-2 px-1">CTR Done</th>
+              {REDDIT_CTR_ENABLED && <th className="py-2 px-1">CTR Done</th>}
             </tr>
           </thead>
 
           <tbody className="text-gray-800 dark:text-gray-100">
             {loading ? (
               <tr>
-                <td colSpan="10" className="py-6 text-center text-gray-500">
+                <td colSpan={REDDIT_CTR_ENABLED ? 10 : 9} className="py-6 text-center text-gray-500">
                   Loading...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan="10" className="py-6 text-center text-gray-500">
+                <td colSpan={REDDIT_CTR_ENABLED ? 10 : 9} className="py-6 text-center text-gray-500">
                   No Reddit accounts found
                 </td>
               </tr>
@@ -219,7 +220,7 @@ export default function RedditAccounts() {
                   </td>
 
                   {/* CTR */}
-                  <td className="py-2 px-1 text-center">
+                  {REDDIT_CTR_ENABLED && <td className="py-2 px-1 text-center">
                     <input
                       type="checkbox"
                       checked={ctrDoneMap[acc._id] === true}
@@ -236,7 +237,7 @@ export default function RedditAccounts() {
                           : "Mark CTR done"
                       }
                     />
-                  </td>
+                  </td>}
                 </tr>
               ))
             )}

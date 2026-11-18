@@ -1,3 +1,4 @@
+import { BHW_ENABLED } from "../../config/platforms";
 // src/pages/employee/AddAccounts.jsx
 import { useEffect, useState } from "react";
 import API from "../../services/api";
@@ -148,7 +149,7 @@ export default function AddAccounts() {
         <option value="instagram">Instagram</option>
         <option value="reddit">Reddit</option>
         <option value="quora">Quora</option>
-        <option value="bhw">BHW</option>
+        {BHW_ENABLED && <option value="bhw">BHW</option>}
       </select>
 
       {/* SINGLE ADD */}

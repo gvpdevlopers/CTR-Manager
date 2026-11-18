@@ -1,5 +1,8 @@
+import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
+import { Users, Layers3, ListChecks, Tags, RefreshCw, ArrowUpRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -23,7 +26,7 @@ export default function AdminDashboard() {
           API.get("/instagram-accounts"),
           API.get("/reddit-accounts"),
           API.get("/quora-accounts"),
-          API.get("/bhw-accounts"),
+          BHW_ENABLED ? API.get("/bhw-accounts") : Promise.resolve({ data: [] }),
           API.get("/platform-tasks"),
           API.get("/keywords"),
         ]);
@@ -34,8 +37,8 @@ export default function AdminDashboard() {
         reddit: rdRes.data || [],
         quora: quRes.data || [],
         bhw: bhwRes.data || [],
-        tasks: taskRes.data || [],
-        keywords: keywordRes.data || [],
+        tasks: (taskRes.data || []).filter((item) => isVisiblePlatform(item.platform)),
+        keywords: (keywordRes.data || []).filter((item) => isVisiblePlatform(item.platform)),
       });
     } catch (err) {
       console.error(err);
@@ -78,99 +81,18 @@ export default function AdminDashboard() {
     countStatus(stats.quora, "not_working") +
     countStatus(stats.bhw, "not_working");
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[60vh] text-lg text-gray-600 dark:text-gray-300">
-        Loading Dashboard...
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-10">
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Dashboard
-        </h2>
-        <button
-          onClick={fetchStats}
-          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
-        >
-          Refresh
-        </button>
-      </div>
-
-      {/* KPI ROW */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <StatCard title="Employees" value={stats.employees} />
-        <StatCard title="Total Accounts" value={totalAccounts} />
-        <StatCard title="Daily Tasks" value={stats.tasks.length} />
-        <StatCard title="Keywords" value={stats.keywords.length} />
-      </div>
-
-      {/* PLATFORM OVERVIEW */}
-      <section>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Platform Overview
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <StatCard title="Instagram" value={stats.instagram.length} />
-          <StatCard title="Reddit" value={stats.reddit.length} />
-          <StatCard title="Quora" value={stats.quora.length} />
-          <StatCard title="BHW" value={stats.bhw.length} />
-        </div>
-      </section>
-
-      {/* ACCOUNT HEALTH */}
-      <section>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Account Health
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-          <HealthCard title="Working" value={totalWorking} type="green" />
-          <HealthCard
-            title="Suspicious"
-            value={totalSuspicious}
-            type="yellow"
-          />
-          <HealthCard title="Not Working" value={totalNotWorking} type="red" />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-/* ================== COMPONENTS ================== */
-
-function StatCard({ title, value }) {
-  return (
-    <div
-      className="rounded p-5 border
-      bg-white dark:bg-gray-800
-      border-gray-200 dark:border-gray-700"
-    >
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
-        {value}
-      </h3>
-    </div>
-  );
-}
-
-function HealthCard({ title, value, type }) {
-  const styles = {
-    green:
-      "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300",
-    yellow:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-400/20 dark:text-yellow-300",
-    red: "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300",
-  };
-
-  return (
-    <div className={`rounded p-5 ${styles[type]}`}>
-      <p className="text-sm mb-1">{title}</p>
-      <h3 className="text-3xl font-bold">{value}</h3>
-    </div>
-  );
+  if (loading) return <div className="dashboard-loading" role="status">Loading dashboard...</div>;
+  const overview = [
+    {label:"Employees", value:stats.employees, icon:<Users size={18}/>, note:"Team members"},
+    {label:"Total accounts", value:totalAccounts, icon:<Layers3 size={18}/>, note:"Across all platforms"},
+    {label:"Daily tasks", value:stats.tasks.length, icon:<ListChecks size={18}/>, note:"Tasks in workspace"},
+    {label:"Keywords", value:stats.keywords.length, icon:<Tags size={18}/>, note:"Available keywords"},
+  ];
+  const platforms = [ ["Instagram",stats.instagram.length,"instagram"], ["Reddit",stats.reddit.length,"reddit"], ["Quora",stats.quora.length,"quora"], ["BlackHatWorld",stats.bhw.length,"bhw"] ].filter(([, , platform]) => isVisiblePlatform(platform));
+  return <div className="dashboard-page">
+    <div className="dashboard-heading"><div><span className="eyebrow">WORKSPACE OVERVIEW</span><h2>Dashboard</h2><p>A snapshot of your team and platform accounts.</p></div><button onClick={fetchStats} className="dashboard-refresh"><RefreshCw size={15}/> Refresh</button></div>
+    <div className="dashboard-stats">{overview.map(({label,value,icon,note}) => <div className="metric-card" key={label}><div className="metric-top"><span>{label}</span><span className="metric-icon">{icon}</span></div><strong>{value}</strong><small>{note}</small></div>)}</div>
+    <div className="dashboard-grid"><section className="dashboard-panel"><div className="panel-heading"><div><h3>Platform overview</h3><p>Accounts across your connected platforms</p></div><span className="panel-count">{totalAccounts} total</span></div><div className="platform-list">{platforms.map(([name,count,path]) => <Link to={`/admin/${path}`} key={path} className="platform-row"><span className={`platform-symbol platform-${path}`}>{name.charAt(0)}</span><span className="platform-name"><strong>{name}</strong><small>Platform accounts</small></span><span className="platform-count">{count}</span><ArrowUpRight size={16}/></Link>)}</div></section>
+    <section className="dashboard-panel"><div className="panel-heading"><div><h3>Account health</h3><p>Current status across all platforms</p></div></div><div className="health-total"><strong>{totalAccounts}</strong><span>Total accounts</span></div><div className="health-list">{[["Working",totalWorking,"good"],["Suspicious",totalSuspicious,"warning"],["Not working",totalNotWorking,"bad"]].map(([label,value,type]) => <div className="health-row" key={label}><span><i className={`health-dot ${type}`}/>{label}</span><strong>{value}</strong></div>)}</div></section></div>
+  </div>;
 }

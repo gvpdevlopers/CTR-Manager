@@ -1,3 +1,4 @@
+import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 // src/pages/employee/DailyTasks.jsx
 import { useEffect, useState } from "react";
 import API from "../../services/api";
@@ -25,7 +26,7 @@ export default function DailyTasks() {
     try {
       setError("");
       const res = await API.get(TASK_API);
-      setTasks(res.data || []);
+      setTasks((res.data || []).filter((item) => isVisiblePlatform(item.platform)));
     } catch (err) {
       console.error(err);
       setError("Failed to load daily tasks.");
@@ -160,7 +161,7 @@ export default function DailyTasks() {
                 <option value="instagram">Instagram</option>
                 <option value="reddit">Reddit</option>
                 <option value="quora">Quora</option>
-                <option value="bhw">BHW</option>
+                {BHW_ENABLED && <option value="bhw">BHW</option>}
               </select>
 
               <button
@@ -219,7 +220,7 @@ export default function DailyTasks() {
           <option value="instagram">Instagram</option>
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
-          <option value="bhw">BHW</option>
+          {BHW_ENABLED && <option value="bhw">BHW</option>}
         </select>
       </div>
 

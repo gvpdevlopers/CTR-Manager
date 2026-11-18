@@ -1,5 +1,6 @@
 // src/App.jsx
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { BHW_ENABLED, REDDIT_CTR_ENABLED } from "./config/platforms";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
@@ -52,13 +53,13 @@ function App() {
             <Route path="employees" element={<AdminEmployees />} />
             <Route path="add-accounts" element={<AdminAddAccounts />} />
             <Route path="instagram-ctr" element={<InstagramCTR />} />
-            <Route path="reddit-ctr" element={<RedditCTR />} />
+            <Route path="reddit-ctr" element={REDDIT_CTR_ENABLED ? <RedditCTR /> : <Navigate to="/admin" replace />} />
             <Route path="quora-ctr" element={<QuoraCTR />} />
-            <Route path="bhw-ctr" element={<BhwCTR />} />
+            <Route path="bhw-ctr" element={BHW_ENABLED ? <BhwCTR /> : <Navigate to="/admin" replace />} />
             <Route path="instagram" element={<AdminInstagramAccounts />} />
             <Route path="reddit" element={<AdminRedditAccounts />} />
             <Route path="quora" element={<AdminQuoraAccounts />} />
-            <Route path="bhw" element={<AdminBhwAccounts />} />
+            <Route path="bhw" element={BHW_ENABLED ? <AdminBhwAccounts /> : <Navigate to="/admin" replace />} />
             <Route path="tasks" element={<AdminDailyTasks />} />
             <Route path="keywords" element={<AdminKeywords />} />
           </Route>
@@ -79,7 +80,7 @@ function App() {
             <Route path="instagram" element={<InstagramAccounts />} />
             <Route path="reddit" element={<RedditAccounts />} />
             <Route path="quora" element={<QuoraAccounts />} />
-            <Route path="bhw" element={<BhwAccounts />} />
+            <Route path="bhw" element={BHW_ENABLED ? <BhwAccounts /> : <Navigate to="/employee" replace />} />
             <Route path="tasks" element={<DailyTasks />} />
             <Route path="keywords" element={<Keywords />} />
           </Route>

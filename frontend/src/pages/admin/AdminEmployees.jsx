@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
-import { EyeIcon, EyeSlashIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { Eye as EyeIcon, EyeOff as EyeSlashIcon, Trash2 as TrashIcon } from "lucide-react";
 
 /* ================= INPUT ================= */
 const inputClass =

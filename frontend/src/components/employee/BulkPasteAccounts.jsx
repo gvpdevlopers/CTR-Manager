@@ -1,3 +1,4 @@
+import { isVisiblePlatform } from "../../config/platforms";
 import { useState } from "react";
 import API from "../../services/api";
 
@@ -12,6 +13,11 @@ export default function BulkPasteAccounts({ refresh }) {
 
     if (rows.length === 0) {
       alert("No data found");
+      return;
+    }
+
+    if (rows.some((row) => !isVisiblePlatform(row.split(",")[0]))) {
+      alert("One or more selected platforms are currently unavailable.");
       return;
     }
 
