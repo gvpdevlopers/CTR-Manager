@@ -52,7 +52,7 @@ const instagramCTRCheckSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["done", "not_done", "suspicious"],
+      enum: ["pending", "done", "not_done", "suspicious", "unavailable"],
       default: "not_done",
     },
 
@@ -65,6 +65,7 @@ const instagramCTRCheckSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    lastAttemptAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

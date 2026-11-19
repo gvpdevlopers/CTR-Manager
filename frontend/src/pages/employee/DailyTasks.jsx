@@ -1,3 +1,4 @@
+import StatusSelect from "../../components/StatusSelect";
 import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 // src/pages/employee/DailyTasks.jsx
 import { useEffect, useState } from "react";
@@ -149,7 +150,8 @@ export default function DailyTasks() {
                 "
               />
 
-              <select
+              <StatusSelect
+                aria-label="Platform"
                 value={platform}
                 onChange={(e) => setPlatform(e.target.value)}
                 className="
@@ -162,7 +164,7 @@ export default function DailyTasks() {
                 <option value="reddit">Reddit</option>
                 <option value="quora">Quora</option>
                 {BHW_ENABLED && <option value="bhw">BHW</option>}
-              </select>
+              </StatusSelect>
 
               <button
                 onClick={addSingleTask}
@@ -207,7 +209,8 @@ export default function DailyTasks() {
       {/* FILTER */}
       <div className="flex items-center gap-3">
         <span className="text-gray-900 dark:text-white">Filter:</span>
-        <select
+        <StatusSelect
+          aria-label="Platform filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="
@@ -221,7 +224,7 @@ export default function DailyTasks() {
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
           {BHW_ENABLED && <option value="bhw">BHW</option>}
-        </select>
+        </StatusSelect>
       </div>
 
       {/* TASK LIST */}

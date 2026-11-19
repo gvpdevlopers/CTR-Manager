@@ -1,3 +1,4 @@
+import StatusSelect from "../../components/StatusSelect";
 import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 // src/pages/employee/Keywords.jsx
 import { useEffect, useState } from "react";
@@ -50,7 +51,8 @@ export default function Keywords() {
       <div className="flex items-center gap-3">
         <span className="text-gray-900 dark:text-white">Filter:</span>
 
-        <select
+        <StatusSelect
+          aria-label="Platform filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="
@@ -65,7 +67,7 @@ export default function Keywords() {
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
           {BHW_ENABLED && <option value="bhw">BHW</option>}
-        </select>
+        </StatusSelect>
       </div>
 
       {/* LIST */}

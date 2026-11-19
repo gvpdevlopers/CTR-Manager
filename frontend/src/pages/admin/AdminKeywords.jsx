@@ -1,3 +1,4 @@
+import StatusSelect from "../../components/StatusSelect";
 import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
@@ -180,7 +181,8 @@ export default function AdminKeywords() {
             className={`flex-1 ${inputClass}`}
           />
 
-          <select
+          <StatusSelect
+            aria-label="Platform"
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
             className={selectClass}
@@ -189,7 +191,7 @@ export default function AdminKeywords() {
             <option value="reddit">Reddit</option>
             <option value="quora">Quora</option>
             {BHW_ENABLED && <option value="bhw">BHW</option>}
-          </select>
+          </StatusSelect>
 
           <button
             onClick={addSingleKeyword}
@@ -236,7 +238,8 @@ reddit karma`}
         <span className="font-medium text-gray-900 dark:text-white">
           Filter:
         </span>
-        <select
+        <StatusSelect
+          aria-label="Platform filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className={selectClass}
@@ -246,7 +249,7 @@ reddit karma`}
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
           {BHW_ENABLED && <option value="bhw">BHW</option>}
-        </select>
+        </StatusSelect>
       </div>
 
       {/* LIST */}

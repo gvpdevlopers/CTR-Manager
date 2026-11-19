@@ -93,11 +93,17 @@ exports.updateInstagramAccount = async (req, res) => {
 exports.toggleInstagramStatus = async (req, res) => {
   const { status } = req.body;
 
+  if (!["working", "suspicious", "not_working"].includes(status)) {
+    return res.status(400).json({ message: "Invalid account status" });
+  }
+
   const updated = await InstagramAccount.findByIdAndUpdate(
     req.params.id,
     { status },
-    { new: true }
+    { new: true, runValidators: true }
   );
+
+  if (!updated) return res.status(404).json({ message: "Account not found" });
 
   res.json(updated);
 };

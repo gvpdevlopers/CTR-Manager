@@ -1,3 +1,4 @@
+import StatusSelect from "../StatusSelect";
 import { BHW_ENABLED } from "../../config/platforms";
 import { useState } from "react";
 import API from "../../services/api";
@@ -32,7 +33,8 @@ export default function AddTaskModal({ onClose, refresh }) {
       >
         <h2 className="font-bold mb-4 dark:text-white">Add Task / Keyword</h2>
 
-        <select
+        <StatusSelect
+          aria-label="Platform"
           value={platform}
           onChange={(e) => setPlatform(e.target.value)}
           className="w-full p-2 mb-3 border rounded"
@@ -41,7 +43,7 @@ export default function AddTaskModal({ onClose, refresh }) {
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
           {BHW_ENABLED && <option value="bhw">BHW</option>}
-        </select>
+        </StatusSelect>
 
         <input
           placeholder="Title"

@@ -1,5 +1,7 @@
+import StatusSelect from "../../components/StatusSelect";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
+import useVerificationRun from "../../hooks/useVerificationRun";
 
 export default function InstagramCTR() {
   const [rows, setRows] = useState([]);
@@ -8,11 +10,16 @@ export default function InstagramCTR() {
     done: 0,
     suspicious: 0,
     not_done: 0,
+    pending: 0,
+    unavailable: 0,
   });
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { run, error: runError, starting, start: startVerification, refresh: refreshRun } = useVerificationRun("/admin/instagram/verification-status", "/admin/instagram/verify-now", () => fetchInstagramCTR());
+  const verifyNow = () => { if (window.confirm("Verify Instagram CTR now?")) startVerification(); };
 
   /* =========================
      FETCH DATA
@@ -20,12 +27,13 @@ export default function InstagramCTR() {
   const fetchInstagramCTR = async () => {
     try {
       setLoading(true);
+      setLoadError("");
       const res = await API.get("/admin/instagram/dashboard");
       setRows(res.data.rows || []);
       setSummary(res.data.summary || {});
     } catch (err) {
       console.error("Failed to load Instagram CTR data", err);
-      alert("Failed to load Instagram CTR data");
+      setLoadError("Unable to load Instagram results. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -35,26 +43,7 @@ export default function InstagramCTR() {
     fetchInstagramCTR();
   }, []);
 
-  const verifyNow = async () => {
-    if (!window.confirm("Verify Instagram CTR now?")) return;
 
-    try {
-      setLoading(true);
-
-      const res = await API.post("/admin/instagram/verify-now");
-
-      alert(res.data?.message || "Verification started");
-
-      // Wait few seconds before fetching updated data
-      setTimeout(() => {
-        fetchInstagramCTR();
-      }, 5000);
-    } catch (err) {
-      alert("Failed to start verification", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   /* =========================
      FILTER LOGIC
@@ -79,6 +68,8 @@ export default function InstagramCTR() {
     suspicious:
       "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
     not_done: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+    pending: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100",
+    unavailable: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
   };
 
   return (
@@ -98,6 +89,7 @@ export default function InstagramCTR() {
           </button>
           <button
             onClick={verifyNow}
+            disabled={starting || run.status === "running" || run.status === "loading" || !!runError}
             className="px-4 py-2 rounded bg-blue-600 text-white cursor-pointer"
           >
             Verify Now
@@ -105,8 +97,14 @@ export default function InstagramCTR() {
         </div>
       </div>
 
+      {loadError && <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200">{loadError} <button type="button" onClick={fetchInstagramCTR} className="underline">Retry</button></div>}
+      <div role="status" className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+        {runError ? <span>{runError} <button type="button" className="underline" onClick={refreshRun}>Retry</button></span> : run.status === "running" ? "Verification is running. Results will refresh when it finishes." : run.status === "completed" ? "The last verification run finished. Review each account's result below." : run.status === "failed" ? (run.error || "The last verification run failed.") : run.status === "loading" ? "Checking verification status..." : "No verification run has started since the server restarted."}
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-300">Automatic verification runs at 11:00 PM IST. Verify Now checks pending claims and retries unavailable results after 15 minutes; completed checks are skipped.</p>
+
       {/* SUMMARY */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <SummaryCard label="Total" value={summary.total} />
         <SummaryCard label="Done" value={summary.done} color="green" />
         <SummaryCard
@@ -115,6 +113,8 @@ export default function InstagramCTR() {
           color="yellow"
         />
         <SummaryCard label="Not Done" value={summary.not_done} color="red" />
+        <SummaryCard label="Pending" value={summary.pending} />
+        <SummaryCard label="Unavailable" value={summary.unavailable} />
       </div>
 
       {/* FILTERS */}
@@ -130,7 +130,8 @@ export default function InstagramCTR() {
              dark:border-gray-700"
         />
 
-        <select
+        <StatusSelect
+          aria-label="Verification status filter"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="w-full md:w-1/4 px-4 py-2 rounded-lg border 
@@ -142,7 +143,9 @@ export default function InstagramCTR() {
           <option value="done">Done</option>
           <option value="suspicious">Suspicious</option>
           <option value="not_done">Not Done</option>
-        </select>
+          <option value="pending">Pending</option>
+          <option value="unavailable">Unavailable</option>
+        </StatusSelect>
       </div>
 
       {/* TABLE */}
@@ -156,20 +159,21 @@ export default function InstagramCTR() {
               <th className="px-4 py-3 text-center">Following (24h)</th>
               <th className="px-4 py-3 text-center">Posts (15d)</th>
               <th className="px-4 py-3">CTR Done By</th>
-              <th className="px-4 py-3">Time</th>
+              <th className="px-4 py-3">Marked at</th>
+              <th className="px-4 py-3">Verified at</th>
             </tr>
           </thead>
 
           <tbody className="divide-y dark:divide-gray-700 text-gray-700 dark:text-gray-200">
             {loading ? (
               <tr>
-                <td colSpan="7" className="text-center py-6">
+                <td colSpan="8" className="text-center py-6">
                   Loading...
                 </td>
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
-                <td colSpan="7" className="text-center py-10 text-gray-500">
+                <td colSpan="8" className="text-center py-10 text-gray-500">
                   No records found
                 </td>
               </tr>
@@ -187,29 +191,27 @@ export default function InstagramCTR() {
                   {/* STATUS + REASONS */}
                   <td className="px-4 py-3">
                     <span
-                      className={`relative group px-3 py-1 rounded-full text-xs font-semibold ${
+                      className={`relative group inline-flex whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold ${
                         statusStyles[row.status]
                       }`}
                     >
-                      {row.status.toUpperCase()}
+                      {row.status.replaceAll("_", " ").toUpperCase()}
 
-                      {row.failureReasons?.length > 0 && (
-                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition z-50">
-                          {row.failureReasons.join(", ")}
-                        </span>
-                      )}
+
                     </span>
+                    {row.failureReasons?.length > 0 && <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">{row.failureReasons.join(", ")}</p>}
                   </td>
 
                   {/* <td className="px-4 py-3 text-center">{row.following}</td> */}
                   <td className="px-4 py-3 text-center">
-                    {row.following > 0 ? `+${row.following}` : row.following}
+                    {row.following == null ? "?" : row.following > 0 ? `+${row.following}` : row.following}
                   </td>
-                  <td className="px-4 py-3 text-center">{row.posts}</td>
+                  <td className="px-4 py-3 text-center">{row.posts ?? "?"}</td>
 
                   <td className="px-4 py-3">{row.ctrDoneBy || "—"}</td>
 
-                  <td className="px-4 py-3 text-xs text-gray-500">
+                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-300">{row.markedAt ? new Date(row.markedAt).toLocaleString() : "?"}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-300">
                     {row.verifiedAt
                       ? new Date(row.verifiedAt).toLocaleString()
                       : "—"}

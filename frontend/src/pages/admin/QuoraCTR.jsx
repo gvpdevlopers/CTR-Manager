@@ -1,5 +1,7 @@
+import StatusSelect from "../../components/StatusSelect";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
+import useVerificationRun from "../../hooks/useVerificationRun";
 
 export default function QuoraCTR() {
   const [rows, setRows] = useState([]);
@@ -9,51 +11,37 @@ export default function QuoraCTR() {
     suspicious: 0,
     not_done: 0,
     pending: 0,
+    unavailable: 0,
   });
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { run, error: runError, starting, start: startVerification, refresh: refreshRun } = useVerificationRun("/admin/quora/verification-status", "/admin/verify-now", () => fetchQuoraCTR());
+  const verifyNow = () => { if (window.confirm("Verify Quora CTR now?")) startVerification(); };
 
-  const verifyNow = async () => {
-    if (!window.confirm("Verify Quora CTR now?")) return;
 
-    try {
-      setLoading(true);
-
-      const res = await API.post("/admin/verify-now");
-
-      alert(res.data?.message || "Verification started");
-
-      // wait 5 seconds then refresh data
-      setTimeout(() => {
-        fetchQuoraCTR();
-      }, 5000);
-    } catch (err) {
-      alert("Failed to start verification", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchQuoraCTR = async () => {
     try {
       setLoading(true);
+      setLoadError("");
       const res = await API.get("/admin/quora/dashboard");
 
       const normalizedRows = (res.data.rows || []).map((row) => ({
         ...row,
 
-        following: row.following ?? 0,
-        answers: row.answers ?? "0 / 1",
-        questions: row.questions ?? 0,
+        following: row.following ?? "?",
+        answers: row.answers ?? "?",
+        questions: row.questions ?? "?",
 
         // validity (new)
         followingValidTill: row.activityMeta?.followingValidTill || null,
         answersValidTill: row.activityMeta?.answersValidTill || null,
         questionsValidTill: row.activityMeta?.questionsValidTill || null,
 
-        verifiedAt: row.verifiedAt || row.createdAt || null,
+        verifiedAt: row.verifiedAt || null,
       }));
 
       setRows(normalizedRows);
@@ -63,10 +51,11 @@ export default function QuoraCTR() {
         suspicious: res.data.summary?.suspicious ?? 0,
         not_done: res.data.summary?.not_done ?? 0,
         pending: res.data.summary?.pending ?? 0,
+        unavailable: res.data.summary?.unavailable ?? 0,
       });
     } catch (err) {
       console.error("Failed to load Quora CTR data", err);
-      alert("Failed to load Quora CTR data");
+      setLoadError("Unable to load Quora results. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -93,6 +82,7 @@ export default function QuoraCTR() {
       "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
     not_done: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
     pending: "bg-gray-200 text-gray-700 dark:bg-gray-800/60 dark:text-gray-300",
+    unavailable: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
   };
 
   const renderValidTill = (validTill, label) => {
@@ -133,6 +123,7 @@ export default function QuoraCTR() {
 
           <button
             onClick={verifyNow}
+            disabled={starting || run.status === "running" || run.status === "loading" || !!runError}
             className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
           >
             Verify Now
@@ -140,8 +131,14 @@ export default function QuoraCTR() {
         </div>
       </div>
 
+      {loadError && <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-200">{loadError} <button type="button" onClick={fetchQuoraCTR} className="underline">Retry</button></div>}
+      <div role="status" className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+        {runError ? <span>{runError} <button type="button" className="underline" onClick={refreshRun}>Retry</button></span> : run.status === "running" ? "Verification is running. Results will refresh when it finishes." : run.status === "completed" ? "The last verification run finished. Review each account's result below." : run.status === "failed" ? (run.error || "The last verification run failed.") : run.status === "loading" ? "Checking verification status..." : "No verification run has started since the server restarted."}
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-300">Automatic verification runs at 11:00 PM IST. Verify Now checks pending claims and retries unavailable results after 15 minutes; completed checks are skipped.</p>
+
       {/* SUMMARY CARDS (FIXED FOR DARK MODE) */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <SummaryCard label="Total" value={summary.total} />
         <SummaryCard label="Done" value={summary.done} color="green" />
         <SummaryCard
@@ -151,6 +148,7 @@ export default function QuoraCTR() {
         />
         <SummaryCard label="Not Done" value={summary.not_done} color="red" />
         <SummaryCard label="Pending" value={summary.pending} />
+        <SummaryCard label="Unavailable" value={summary.unavailable} />
       </div>
 
       {/* FILTERS */}
@@ -163,7 +161,8 @@ export default function QuoraCTR() {
           className="w-full md:w-1/3 px-4 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
         />
 
-        <select
+        <StatusSelect
+          aria-label="Verification status filter"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="w-full md:w-1/4 px-4 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
@@ -173,7 +172,8 @@ export default function QuoraCTR() {
           <option value="suspicious">Suspicious</option>
           <option value="not_done">Not Done</option>
           <option value="pending">Pending</option>
-        </select>
+          <option value="unavailable">Unavailable</option>
+        </StatusSelect>
       </div>
 
       {/* TABLE (DARK MODE FIXED) */}
@@ -188,21 +188,22 @@ export default function QuoraCTR() {
               <th className="px-4 py-3 text-center">Answers (24h)</th>
               <th className="px-4 py-3 text-center">Questions (15d)</th>
               <th className="px-4 py-3">CTR Done By</th>
-              <th className="px-4 py-3">Time</th>
+              <th className="px-4 py-3">Marked at</th>
+              <th className="px-4 py-3">Verified at</th>
             </tr>
           </thead>
 
           <tbody className="divide-y dark:divide-gray-700 text-gray-700 dark:text-gray-200">
             {loading ? (
               <tr>
-                <td colSpan="8" className="text-center py-6">
+                <td colSpan="9" className="text-center py-6">
                   Loading...
                 </td>
               </tr>
             ) : filteredRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan="8"
+                  colSpan="9"
                   className="text-center py-10 text-gray-500 dark:text-gray-400"
                 >
                   No records found
@@ -218,12 +219,13 @@ export default function QuoraCTR() {
                   <td className="px-4 py-3 font-medium">{row.userId}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      className={`inline-flex whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold ${
                         statusStyles[row.status]
                       }`}
                     >
-                      {row.status.toUpperCase()}
+                      {row.status.replaceAll("_", " ").toUpperCase()}
                     </span>
+                    {row.error && <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">{row.error}</p>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {row.following}
@@ -239,6 +241,7 @@ export default function QuoraCTR() {
                   </td>
 
                   <td className="px-4 py-3">{row.ctrDoneBy || "—"}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-300">{row.markedAt ? new Date(row.markedAt).toLocaleString() : "?"}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
                     {row.verifiedAt
                       ? new Date(row.verifiedAt).toLocaleString()

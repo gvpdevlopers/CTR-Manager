@@ -1,3 +1,5 @@
+import StatusSelect from "../../components/StatusSelect";
+import { validateAccount } from "../../utils/accountValidation";
 import { BHW_ENABLED } from "../../config/platforms";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
@@ -18,17 +20,12 @@ export default function AdminAddAccounts() {
   const [platform, setPlatform] = useState("instagram");
   const [form, setForm] = useState({});
   const [bulkText, setBulkText] = useState("");
-  const [employees, setEmployees] = useState([]);
+  const [bulkResult, setBulkResult] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [bulkErrors, setBulkErrors] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [toast, setToast] = useState(null);
-
-  /* ================= FETCH EMPLOYEES ================= */
-  useEffect(() => {
-    API.get("/admin/employees")
-      .then((res) => setEmployees(res.data || []))
-      .catch(() => setEmployees([]));
-  }, []);
 
   /* ================= TOAST AUTO HIDE ================= */
   useEffect(() => {
@@ -55,12 +52,14 @@ export default function AdminAddAccounts() {
   /* ================= SINGLE ADD ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateAccount(platform, form);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
 
     try {
       setLoading(true);
 
       const payload = { ...form };
-      if (!payload.ownerEmployeeId) delete payload.ownerEmployeeId;
 
       await API.post(getApiUrl(), payload);
 
@@ -76,67 +75,34 @@ export default function AdminAddAccounts() {
 
   /* ================= BULK ADD ================= */
   const handleBulkAdd = async () => {
-    if (!bulkText.trim()) return;
-
-    const rows = bulkText
-      .split("\n")
-      .map((r) => r.trim())
-      .filter(Boolean);
-
-    try {
-      setLoading(true);
-
-      for (const row of rows) {
-        const values = row.split(",").map((v) => v.trim());
-        let payload = {};
-
-        if (platform === "instagram") {
-          const [name, username,userId, password, link, ownerId] = values;
-          payload = { name, username,userId, password, link };
-          if (ownerId) payload.ownerEmployeeId = ownerId;
-        }
-
-        if (platform === "reddit" || platform === "quora") {
-          const [
-            userId,
-            name1,
-            email1,
-            password1,
-            name2,
-            email2,
-            password2,
-            ownerId,
-          ] = values;
-
-          payload = {
-            userId,
-            name1,
-            email1,
-            password1,
-            name2,
-            email2,
-            password2,
-          };
-          if (ownerId) payload.ownerEmployeeId = ownerId;
-        }
-
-        if (platform === "bhw") {
-          const [userId, name, email, password, link, ownerId] = values;
-          payload = { userId, name, email, password, link };
-          if (ownerId) payload.ownerEmployeeId = ownerId;
-        }
-
-        await API.post(getApiUrl(), payload);
+    const rows = bulkText.split("\n").map((row) => row.trim()).filter(Boolean);
+    if (!rows.length) { showToast("error", "Paste some data first"); return; }
+    setLoading(true);
+    const failed = [];
+    const details = [];
+    let added = 0;
+    for (const [index, row] of rows.entries()) {
+      const values = row.split(",").map((value) => value.trim());
+      let payload;
+      if (platform === "instagram") {
+        const [name, username, userId, password, link] = values;
+        payload = { name, username, userId, password, link };
+      } else if (platform === "reddit" || platform === "quora") {
+        const [userId, name1, email1, password1, name2, email2, password2] = values;
+        payload = { userId, name1, email1, password1, name2, email2, password2 };
+      } else {
+        const [userId, name, email, password, link] = values;
+        payload = { userId, name, email, password, link };
       }
-
-      setBulkText("");
-      showToast("success", "Bulk upload completed successfully");
-    } catch (err) {
-      console.error(err);
-      showToast("error", "Bulk upload failed");
-    } finally {
-      setLoading(false);
+      const errors = validateAccount(platform, payload);
+      if (Object.keys(errors).length) { failed.push(row); details.push(`Row ${index + 1}: ${Object.values(errors).join(" ")}`); continue; }
+      try { await API.post(getApiUrl(), payload); added++; }
+      catch (error) { failed.push(row); details.push(`Row ${index + 1}: ${error.response?.data?.message || "Could not confirm the result; check the account list before retrying."}`); }
     }
+    setBulkErrors(details);
+    setBulkText(failed.join("\n"));
+    setBulkResult(failed.length ? `${added} confirmed added; ${failed.length} could not be confirmed. Only those rows remain. Check the account list before retrying; a timed-out request may have succeeded.` : `${added} account(s) added.`);
+    setLoading(false);
   };
 
   /* ================= UI ================= */
@@ -148,7 +114,8 @@ export default function AdminAddAccounts() {
       </h2>
 
       {/* PLATFORM SELECT */}
-      <select
+      <StatusSelect
+        aria-label="Platform"
         value={platform}
         onChange={(e) => {
           setPlatform(e.target.value);
@@ -160,7 +127,7 @@ export default function AdminAddAccounts() {
         <option value="reddit">Reddit</option>
         <option value="quora">Quora</option>
         {BHW_ENABLED && <option value="bhw">BHW</option>}
-      </select>
+      </StatusSelect>
 
       {/* SINGLE ADD */}
       <form
@@ -174,21 +141,7 @@ export default function AdminAddAccounts() {
           Add Platform Account (Single)
         </h3>
 
-        {/* OWNER */}
-        <select
-          name="ownerEmployeeId"
-          value={form.ownerEmployeeId || ""}
-          onChange={handleChange}
-          className={`${selectClass} md:col-span-2`}
-        >
-          <option value="">Assign to (optional)</option>
-          {employees.map((emp) => (
-            <option key={emp._id} value={emp._id}>
-              {emp.fullName || emp.username}
-            </option>
-          ))}
-        </select>
-
+        {Object.keys(fieldErrors).length > 0 && <ul role="alert" className="md:col-span-2 text-sm text-red-700 dark:text-red-300">{Object.entries(fieldErrors).map(([field, message]) => <li key={field}>{message}</li>)}</ul>}
         {/* PLATFORM FIELDS */}
         {platform === "instagram" && (
           <>
@@ -229,6 +182,8 @@ export default function AdminAddAccounts() {
             />
           </>
         )}
+
+        {platform === "quora" && <input name="profileUrl" placeholder="Public Quora profile URL (optional)" aria-label="Public Quora profile URL" value={form.profileUrl || ""} onChange={handleChange} className={inputClass} />}
 
         {(platform === "reddit" || platform === "quora") && (
           <>
@@ -343,6 +298,8 @@ export default function AdminAddAccounts() {
           Bulk Paste (Google Sheet Style)
         </h3>
 
+        {bulkErrors.length > 0 && <ul role="alert" className="text-sm text-red-700 dark:text-red-300">{bulkErrors.map((message, index) => <li key={index}>{message}</li>)}</ul>}
+        {bulkResult && <p role="status" className="text-sm text-gray-700 dark:text-gray-200">{bulkResult}</p>}
         <textarea
           rows="6"
           value={bulkText}

@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line
   }, []);
 
   /* ============================
@@ -130,4 +129,6 @@ export const AuthProvider = ({ children }) => {
 /* ============================
    HOOK
 ============================ */
+// The provider and its hook are intentionally kept together.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

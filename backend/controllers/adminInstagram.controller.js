@@ -1,55 +1,46 @@
+const { businessDate } = require("../utils/businessDate");
+const { startRun, getRun } = require("../services/verificationRun.service");
+const TaskExecution = require("../models/TaskExecution");
+const { claimDateRange } = require("../utils/businessDate");
 const InstagramAccount = require("../models/InstagramAccount");
 const InstagramCTRCheck = require("../models/InstagramCTRCheck");
 const { runInstagramCTRVerification } = require("../cron/instagramCTR.cron");
 
 function getTodayDate() {
-  return new Date().toISOString().slice(0, 10);
+  return businessDate();
 }
 
 exports.verifyInstagramNow = async (req, res) => {
-  try {
-    // Start verification but DO NOT await it
-    runInstagramCTRVerification({ manual: true })
-      .then(result => {
-        console.log("Manual verification finished:", result);
-      })
-      .catch(err => {
-        console.error("Manual verification error:", err);
-      });
-
-    return res.status(200).json({
-      success: true,
-      message: "Verification started. Please refresh after a few seconds.",
-    });
-
-  } catch (err) {
-    console.error("Manual Instagram verify error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to start verification",
-    });
+  if (!(await startRun("instagram", () => runInstagramCTRVerification({ manual: true })))) {
+    return res.status(409).json({ message: "Instagram verification is already running." });
   }
+  return res.status(202).json({ message: "Instagram verification started." });
 };
 
-
-
+exports.getInstagramVerificationStatus = async (req, res) => res.json(await getRun("instagram"));
 
 exports.getAdminInstagramDashboard = async (req, res) => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = businessDate();
 
     const ctrChecks = await InstagramCTRCheck.find({ date: today })
       .populate("employeeId", "fullName username email")
       .populate("instagramAccountId", "username")
       .sort({ createdAt: -1 });
 
+    const { start, end } = claimDateRange(today);
+    const claims = await TaskExecution.find({ platform: "instagram", taskId: "daily_ctr", taskDate: { $gte: start, $lt: end } }).populate("employeeId", "fullName username").populate("accountId", "username").sort({ markedDoneAt: 1 }).lean();
+    const claimByAccount = new Map();
+    for (const claim of claims) if (claim.accountId && !claimByAccount.has(String(claim.accountId._id))) claimByAccount.set(String(claim.accountId._id), claim);
     const rows = ctrChecks.map((ctr, index) => ({
+      accountId: String(ctr.instagramAccountId?._id || ctr.instagramAccountId || ""),
+      markedAt: claimByAccount.get(String(ctr.instagramAccountId?._id || ctr.instagramAccountId))?.markedDoneAt || ctr.employeeSubmittedAt || null,
       sr: index + 1,
       username: ctr.instagramAccountId?.username || ctr.username,
       status: ctr.status,
 
-      following: ctr?.deltas?.following ?? 0,
-      posts: ctr?.deltas?.posts ?? 0,
+      following: ctr?.status === "unavailable" ? null : (ctr?.deltas?.following ?? 0),
+      posts: ctr?.status === "unavailable" ? null : (ctr?.deltas?.posts ?? 0),
 
       ctrDoneBy:
         ctr?.employeeId?.fullName ||
@@ -61,8 +52,12 @@ exports.getAdminInstagramDashboard = async (req, res) => {
       failureReasons: ctr.failureReasons || [],
     }));
 
+    const checkedIds = new Set(rows.map((row) => row.accountId));
+    for (const [accountId, claim] of claimByAccount) if (!checkedIds.has(accountId)) rows.push({ accountId, username: claim.accountId.username, status: "pending", following: null, posts: null, ctrDoneBy: claim.employeeId?.fullName || claim.employeeId?.username || "?", markedAt: claim.markedDoneAt, verifiedAt: null, failureReasons: ["Awaiting verification"] });
     const summary = {
       total: rows.length,
+      pending: rows.filter(r => r.status === "pending").length,
+      unavailable: rows.filter(r => r.status === "unavailable").length,
       done: rows.filter(r => r.status === "done").length,
       suspicious: rows.filter(r => r.status === "suspicious").length,
       not_done: rows.filter(r => r.status === "not_done").length,

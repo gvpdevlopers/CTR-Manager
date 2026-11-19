@@ -38,7 +38,7 @@ export default function BulkPasteAccounts({ refresh }) {
       setText("");
       refresh();
       alert("Bulk accounts added");
-    } catch (err) {
+    } catch {
       alert("Bulk upload failed");
     }
   };

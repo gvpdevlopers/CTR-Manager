@@ -1,3 +1,5 @@
+import ConfirmDialog from "../../components/ConfirmDialog";
+import StatusSelect from "../../components/StatusSelect";
 // src/pages/admin/AdminInstagramAccounts.jsx
 import { useEffect, useState } from "react";
 import API from "../../services/api";
@@ -28,6 +30,7 @@ export default function AdminInstagramAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   /* ================= FETCH ================= */
   const fetchAccounts = async () => {
@@ -73,7 +76,6 @@ export default function AdminInstagramAccounts() {
   };
 
   const deleteAccount = async (id) => {
-    if (!confirm("Delete this account?")) return;
     try {
       await API.delete(`/instagram-accounts/${id}`);
       fetchAccounts();
@@ -99,7 +101,8 @@ export default function AdminInstagramAccounts() {
 
   /* ================= UI ================= */
   return (
-    <div className="space-y-5">
+    <div className="account-sheet-page space-y-5">
+      {deleteId && <ConfirmDialog title="Delete account?" description="This account will be removed. This action cannot be undone." onClose={() => setDeleteId(null)} onConfirm={() => deleteAccount(deleteId)} />}
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -245,7 +248,8 @@ export default function AdminInstagramAccounts() {
                   </td>
 
                   <td className="py-2">
-                    <select
+                    <StatusSelect
+                      aria-label={`Status for ${acc.username || acc.userId || acc.name1 || "account"}`}
                       value={acc.status}
                       onChange={(e) => changeStatus(acc._id, e.target.value)}
                       className={selectStatus}
@@ -253,12 +257,12 @@ export default function AdminInstagramAccounts() {
                       <option value="working">Working</option>
                       <option value="suspicious">Suspicious</option>
                       <option value="not_working">Not Working</option>
-                    </select>
+                    </StatusSelect>
                   </td>
 
                   <td className="py-2 text-right pr-2">
                     <button
-                      onClick={() => deleteAccount(acc._id)}
+                      onClick={() => setDeleteId(acc._id)}
                       className={`${actionBtn} border-red-600 text-red-600 dark:text-red-400`}
                     >
                       Delete

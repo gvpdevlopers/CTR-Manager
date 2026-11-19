@@ -48,7 +48,7 @@ const redditCTRCheckSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["done", "suspicious", "not_done"],
+      enum: ["pending", "done", "suspicious", "not_done", "unavailable"],
       default: "not_done",
     },
     verifiedAt: {
@@ -57,6 +57,7 @@ const redditCTRCheckSchema = new mongoose.Schema(
   },
 
     notes: String,
+    failureReasons: { type: [String], default: [] },
   },
   { timestamps: true }
 );

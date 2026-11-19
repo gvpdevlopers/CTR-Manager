@@ -1,3 +1,4 @@
+import ResetPasswordDialog from "../../components/ResetPasswordDialog";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 import { Eye as EyeIcon, EyeOff as EyeSlashIcon, Trash2 as TrashIcon } from "lucide-react";
@@ -14,6 +15,7 @@ export default function AdminEmployees() {
 
   // modal + form
   const [showModal, setShowModal] = useState(false);
+  const [resetEmployee, setResetEmployee] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
@@ -78,18 +80,9 @@ export default function AdminEmployees() {
   };
 
   /* ================= RESET PASSWORD ================= */
-  const resetPassword = async (id) => {
-    const newPassword = prompt("Enter new password");
-    if (!newPassword) return;
-
-    try {
-      await API.put(`/admin/employees/${id}/reset-password`, {
-        newPassword,
-      });
-      showToast("success", "Password reset successful");
-    } catch {
-      showToast("error", "Password reset failed");
-    }
+  const resetPassword = async (id, newPassword) => {
+    await API.put(`/admin/employees/${id}/reset-password`, { newPassword });
+    showToast("success", "Password reset successful");
   };
 
   /* ================= DELETE ================= */
@@ -219,7 +212,7 @@ export default function AdminEmployees() {
                     </button>
 
                     <button
-                      onClick={() => resetPassword(emp._id)}
+                      onClick={() => setResetEmployee(emp)}
                       className="border px-3 py-1 rounded text-orange-600 border-orange-600 hover:bg-orange-50
                         dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-500/10"
                     >
@@ -241,6 +234,8 @@ export default function AdminEmployees() {
           </tbody>
         </table>
       </div>
+
+      {resetEmployee && <ResetPasswordDialog employee={resetEmployee} onClose={() => setResetEmployee(null)} onSubmit={resetPassword} />}
 
       {/* MODAL */}
       {showModal && (

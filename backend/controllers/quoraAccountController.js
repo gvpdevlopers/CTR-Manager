@@ -6,12 +6,21 @@ function buildQuoraProfileUrl(username) {
 }
 
 // ✅ EMPLOYEE / ADMIN — CREATE SINGLE
+function normalizeQuoraProfileUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !["quora.com", "www.quora.com"].includes(url.hostname.toLowerCase()) || url.username || url.password || url.port || !/^\/profile\/[^/]+\/?$/.test(url.pathname)) return null;
+    return `https://www.quora.com${url.pathname.replace(/\/$/, "")}`;
+  } catch { return null; }
+}
+
 exports.createQuoraAccount = async (req, res) => {
   try {
     const { userId, name1, email1, password1, name2, email2, password2 } =
       req.body;
 
-    const profileUrl = buildQuoraProfileUrl(name1);
+    const profileUrl = req.body.profileUrl ? normalizeQuoraProfileUrl(req.body.profileUrl) : buildQuoraProfileUrl(name1);
+    if (!profileUrl) return res.status(400).json({ message: "Enter a valid HTTPS Quora profile URL." });
 
     const account = await QuoraAccount.create({
       ownerEmployeeId: req.user._id,
@@ -76,12 +85,35 @@ exports.getAllQuoraAccounts = async (req, res) => {
 // ✅ EMPLOYEE / ADMIN — INLINE UPDATE
 exports.updateQuoraAccount = async (req, res) => {
   try {
+    const fields = ["userId", "name1", "email1", "password1", "name2", "email2", "password2", "profileUrl", "status", "resetBaseline"];
+    const updates = req.user?.role === "employee" ? Object.fromEntries(Object.entries(req.body).filter(([key]) => fields.includes(key))) : { ...req.body };
+    const resetBaseline = updates.resetBaseline === true;
+    delete updates.resetBaseline;
+    if (updates.profileUrl !== undefined) {
+      const normalized = normalizeQuoraProfileUrl(updates.profileUrl);
+      if (!normalized) return res.status(400).json({ message: "Enter a valid HTTPS Quora profile URL." });
+      const account = await QuoraAccount.findById(req.params.id);
+      if (!account) return res.status(404).json({ message: "Account not found" });
+      if (account.baselineCapturedAt && account.profileUrl !== normalized && !resetBaseline) {
+        return res.status(409).json({ message: "This account has a baseline. Review it before changing the profile URL." });
+      }
+      if (account.baselineCapturedAt && account.profileUrl !== normalized && resetBaseline) {
+        updates.baselineFollowing = null;
+        updates.baselineAnswers = null;
+        updates.baselineQuestions = null;
+        updates.baselineCapturedAt = null;
+        updates.baselineAnswersCount = null;
+        updates.baselineLastAnswerDate = null;
+      }
+      updates.profileUrl = normalized;
+    }
     const updated = await QuoraAccount.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true }
+      updates,
+      { new: true, runValidators: true }
     );
 
+    if (!updated) return res.status(404).json({ message: "Account not found" });
     res.json(updated);
   } catch {
     res.status(500).json({ message: "Update failed" });
@@ -91,8 +123,13 @@ exports.updateQuoraAccount = async (req, res) => {
 // ✅ TOGGLE STATUS
 exports.toggleQuoraStatus = async (req, res) => {
   try {
+    const { status } = req.body;
+    if (!["working", "suspicious", "not_working"].includes(status)) {
+      return res.status(400).json({ message: "Invalid account status" });
+    }
     const acc = await QuoraAccount.findById(req.params.id);
-    acc.status = acc.status === "working" ? "not_working" : "working";
+    if (!acc) return res.status(404).json({ message: "Account not found" });
+    acc.status = status;
     await acc.save();
 
     res.json(acc);

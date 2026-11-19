@@ -74,9 +74,7 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-        Dashboard
-      </h2>
+      <div className="dashboard-heading"><div><span className="eyebrow">WORKSPACE OVERVIEW</span><h2>Dashboard</h2><p>Keep track of your team's platform accounts.</p></div><button onClick={fetchDashboardData} className="dashboard-refresh">Refresh</button></div>
 
       {/* ================= STATS ================= */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -119,17 +117,17 @@ export default function EmployeeDashboard() {
       {/* ================= RECENT ACTIVITY ================= */}
       <div className="rounded p-5 border bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
-          Recent Activity
+          Recently Added Accounts
         </h3>
 
         {recentAccounts.length === 0 ? (
-          <p className="text-gray-500">No recent activity.</p>
+          <p className="text-gray-500">No recent accounts.</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {recentAccounts.map((acc) => (
               <li key={acc._id} className="text-gray-700 dark:text-gray-300">
                 • {acc.platform} account{" "}
-                <span className="font-medium">{acc.displayName}</span> marked as{" "}
+                <span className="font-medium">{acc.displayName}</span> currently{" "}
                 <span className="capitalize font-medium">
                   {acc.status.replace("_", " ")}
                 </span>
@@ -152,8 +150,8 @@ function StatCard({ label, value, color }) {
   };
 
   return (
-    <div className="rounded p-4 border bg-white dark:bg-gray-800">
-      <p className="text-sm text-gray-600">{label}</p>
+    <div className="metric-card">
+      <p className="text-sm text-gray-600 dark:text-gray-300">{label}</p>
       <p
         className={`text-2xl font-bold ${
           color ? colorMap[color] : "text-gray-900 dark:text-gray-100"

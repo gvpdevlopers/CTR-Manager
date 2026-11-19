@@ -2,11 +2,13 @@ const express = require("express");
 const QuoraAccount = require("../models/QuoraAccount");
 const { fetchQuoraProfileData } = require("../services/quoraApify.service");
 const { protect, isAdmin } = require("../middlewares/authMiddleware");
-const { verifyQuoraNow } = require("../controllers/adminQuoraCTR.controller");
+const { verifyQuoraNow, getQuoraVerificationStatus } = require("../controllers/adminQuoraCTR.controller");
+const { runWithLock } = require("../services/verificationRun.service");
 
 const router = express.Router();
 
 router.post("/verify-now", protect, isAdmin, verifyQuoraNow);
+router.get("/quora/verification-status", protect, isAdmin, getQuoraVerificationStatus);
 
 /* =========================
    CAPTURE QUORA BASELINE
@@ -15,11 +17,13 @@ router.post("/verify-now", protect, isAdmin, verifyQuoraNow);
 router.post(
   "/quora-accounts/:id/capture-baseline",
   protect,
-  isAdmin,
   async (req, res) => {
     try {
       const { id } = req.params;
       const { force } = req.query; // ?force=true to overwrite
+      if (force === "true" && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Only an admin can overwrite an existing baseline." });
+      }
 
       const account = await QuoraAccount.findById(id);
 
@@ -53,29 +57,36 @@ router.post(
       /* ======================
          FETCH PUBLIC DATA
       ====================== */
-      const apifyResult = await fetchQuoraProfileData(account.profileUrl);
+      const locked = await runWithLock("quora", async () => {
+        const current = await QuoraAccount.findById(id);
+        if (!current || !current.profileUrl) throw new Error("Quora account or profile no longer exists");
+        if (current.baselineCapturedAt && force !== "true") {
+          return { success: true, message: "Baseline already exists" };
+        }
+        const profileUrl = current.profileUrl;
+        const apifyResult = await fetchQuoraProfileData(profileUrl);
 
-      if (!apifyResult.success) {
-        return res.status(200).json({
+        if (!apifyResult.success) {
+          return {
           success: false,
           message: "Scraper failed — baseline not changed",
           error: apifyResult.error,
-        });
-      }
+          };
+        }
 
       const { following, answers, questions, runId } = apifyResult;
 
       /* ======================
          SAVE / OVERWRITE BASELINE
       ====================== */
-      account.baselineFollowing = following;
-      account.baselineAnswers = answers;
-      account.baselineQuestions = questions;
-      account.baselineCapturedAt = new Date();
-
-      await account.save();
-
-      return res.json({
+        const capturedAt = new Date();
+        const updated = await QuoraAccount.findOneAndUpdate(
+          { _id: id, profileUrl, ...(force !== "true" ? { baselineCapturedAt: null } : {}) },
+          { $set: { baselineFollowing: following, baselineAnswers: answers, baselineQuestions: questions, baselineCapturedAt: capturedAt } },
+          { new: true }
+        );
+        if (!updated) throw new Error("Account or profile changed while capturing the baseline; retry after reviewing it");
+        return {
         success: true,
         message:
           force === "true"
@@ -85,12 +96,15 @@ router.post(
           following,
           answers,
           questions,
-          capturedAt: account.baselineCapturedAt,
+          capturedAt,
         },
         metadata: {
           apifyRunId: runId,
         },
-      });
+        };
+      }, { operation: "baseline" });
+      if (!locked.started) return res.status(409).json({ success: false, message: "Quora verification or baseline capture is already running." });
+      return res.json(locked.result);
     } catch (err) {
       console.error("❌ BASELINE CAPTURE ERROR:", err);
       return res.status(500).json({ message: "Baseline capture failed" });

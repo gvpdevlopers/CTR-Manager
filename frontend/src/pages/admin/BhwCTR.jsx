@@ -1,7 +1,7 @@
+import StatusSelect from "../../components/StatusSelect";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 
-const RETRY_COOLDOWN_SECONDS = 10 * 60; // fallback (10 min)
 
 export default function AdminBhwCTR() {
   const [rows, setRows] = useState([]);
@@ -89,25 +89,6 @@ export default function AdminBhwCTR() {
     return row.status;
   };
 
-  const getCooldownRemaining = (row) => {
-    if (!row.lastRetryAt) return 0;
-
-    if (row.cooldownRemainingSeconds !== undefined) {
-      return row.cooldownRemainingSeconds;
-    }
-
-    const diff =
-      RETRY_COOLDOWN_SECONDS * 1000 -
-      (Date.now() - new Date(row.lastRetryAt).getTime());
-
-    return Math.max(0, Math.ceil(diff / 1000));
-  };
-
-  const formatCooldown = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}m ${s}s`;
-  };
 
   return (
     <div className="p-6 space-y-6">
@@ -144,7 +125,8 @@ export default function AdminBhwCTR() {
           className="w-full md:w-1/3 px-4 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
         />
 
-        <select
+        <StatusSelect
+          aria-label="Verification status filter"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="w-full md:w-1/4 px-4 py-2 rounded-lg border bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
@@ -154,7 +136,7 @@ export default function AdminBhwCTR() {
           <option value="partial">Partial</option>
           <option value="failed">Failed</option>
           <option value="pending">Pending</option>
-        </select>
+        </StatusSelect>
       </div>
 
       {/* TABLE */}
@@ -193,13 +175,7 @@ export default function AdminBhwCTR() {
               </tr>
             ) : (
               filteredRows.map((row, index) => {
-                const cooldown = getCooldownRemaining(row);
                 const displayStatus = getDisplayStatus(row);
-
-                const showRetry =
-                  row.canRetry &&
-                  displayStatus !== "pending" &&
-                  displayStatus !== "done";
 
                 return (
                   <tr

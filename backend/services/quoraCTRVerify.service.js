@@ -1,7 +1,10 @@
+const { claimDateRange } = require("../utils/businessDate");
 const QuoraAccount = require("../models/QuoraAccount");
 const QuoraCTRCheck = require("../models/QuoraCTRCheck");
 const TaskExecution = require("../models/TaskExecution");
 const { fetchQuoraProfileData } = require("./quoraApify.service");
+const { shouldVerify } = require("./verificationEligibility");
+const { getRecoveryObservedAt } = require("./verificationRun.service");
 
 async function verifyQuoraCTR(quoraAccountId, date) {
   console.log("──────────────────────────────────────");
@@ -21,17 +24,28 @@ async function verifyQuoraCTR(quoraAccountId, date) {
     date,
   });
 
-  if (existing && existing.status === "done") {
-    console.log("⏭ Already DONE today — skipping");
+  if (!shouldVerify(existing)) {
+    // A crash can occur after saving the daily result but before advancing the
+    // account baseline. Repair only when the old baseline still matches the
+    // values used for that result; never overwrite a newer/profile reset.
+    const actual = existing?.actual;
+    const before = [actual?.followingBefore, actual?.answersBefore, actual?.questionsBefore];
+    const after = [actual?.followingAfter, actual?.answersAfter, actual?.questionsAfter];
+    if (existing?.metadata?.verifiedAt && account.baselineCapturedAt &&
+        before.every(Number.isFinite) && after.every(Number.isFinite) &&
+        account.baselineFollowing === before[0] && account.baselineAnswers === before[1] && account.baselineQuestions === before[2]) {
+      await QuoraAccount.updateOne(
+        { _id: account._id, profileUrl: account.profileUrl, baselineFollowing: before[0], baselineAnswers: before[1], baselineQuestions: before[2], baselineCapturedAt: account.baselineCapturedAt },
+        { $set: { baselineFollowing: after[0], baselineAnswers: after[1], baselineQuestions: after[2], baselineCapturedAt: existing.metadata.verifiedAt, lastCheckedAt: existing.metadata.verifiedAt } }
+      );
+    }
+    console.log("Quora observation already completed or retry is cooling down");
     return existing;
   }
 
   console.log("🔎 Account:", account.userId);
 
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  const { start, end } = claimDateRange(date);
 
   const taskExecution = await TaskExecution.findOne({
     accountId: account._id,
@@ -44,17 +58,14 @@ async function verifyQuoraCTR(quoraAccountId, date) {
   // 1️⃣ Employee did not mark CTR
   if (!taskExecution) {
     console.log("DEBUG EXIT → no taskExecution");
+    return null;
+  }
+
+  const recoveredAt = getRecoveryObservedAt(account.profileUrl);
+  if (recoveredAt && account.baselineCapturedAt && new Date(account.baselineCapturedAt) > recoveredAt) {
     return await QuoraCTRCheck.findOneAndUpdate(
       { quoraAccountId: account._id, date },
-      {
-        $set: {
-          quoraAccountId: account._id,
-          employeeId: account.ownerEmployeeId,
-          date,
-          status: "not_done",
-          metadata: { error: "Employee did not mark CTR done" },
-        },
-      },
+      { $set: { quoraAccountId: account._id, employeeId: taskExecution.employeeId, date, status: "unavailable", metadata: { error: "A newer baseline exists; review the interrupted result manually", attemptedAt: new Date() } } },
       { upsert: true, new: true }
     );
   }
@@ -101,8 +112,8 @@ async function verifyQuoraCTR(quoraAccountId, date) {
           quoraAccountId: account._id,
           employeeId: taskExecution.employeeId,
           date,
-          status: "pending",
-          metadata: { error: apifyResult.error },
+          status: "unavailable",
+          metadata: { error: apifyResult.error, attemptedAt: new Date() },
         },
       },
       { upsert: true, new: true }
@@ -128,11 +139,11 @@ async function verifyQuoraCTR(quoraAccountId, date) {
           quoraAccountId: account._id,
           employeeId: taskExecution.employeeId,
           date,
-          status: "pending",
+          status: "unavailable",
           metadata: {
             apifyRunId: runId,
             error: "Apify returned zeroed metrics",
-            verifiedAt: new Date(),
+            attemptedAt: new Date(),
           },
         },
       },
@@ -148,11 +159,19 @@ async function verifyQuoraCTR(quoraAccountId, date) {
 
   // ============ 🔹 15-DAY RULE + 3-CONDITION LOGIC 🔹 ============
 
-  const now = new Date();
+  const now = recoveredAt || new Date();
 
 let followingValidTill = null;
 let answersValidTill = null;
 let questionsValidTill = null;
+const previousQuestionObservation = await QuoraCTRCheck.findOne({
+  quoraAccountId: account._id,
+  date: { $lt: date },
+  "activityMeta.questionsValidTill": { $gt: now },
+}).sort({ date: -1 });
+if (previousQuestionObservation) {
+  questionsValidTill = previousQuestionObservation.activityMeta.questionsValidTill;
+}
 
 // Following → 24 hours
 if (followingDelta > 0) {
@@ -225,18 +244,19 @@ if (trueCount === 3) {
   questionsValidTill,
 },
         status,
-        metadata: { apifyRunId: runId, verifiedAt: new Date() },
+        metadata: { apifyRunId: runId, verifiedAt: now },
       },
     },
     { upsert: true, new: true }
   );
 
-  // Update baseline only when fully done
-  if (status === "done") {
+  // Every complete observation becomes the next comparison baseline.
+  {
     account.baselineFollowing = following;
     account.baselineAnswers = answers;
     account.baselineQuestions = questions;
-    account.lastCheckedAt = new Date();
+    account.lastCheckedAt = now;
+    account.baselineCapturedAt = account.lastCheckedAt;
     await account.save();
   }
 

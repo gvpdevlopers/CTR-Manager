@@ -21,7 +21,7 @@ router.get("/", protect, getAllRedditAccounts);
 router.post("/", protect, createRedditAccount);
 
 // ADMIN ONLY (DYNAMIC LAST)
-router.put("/:id", protect, isAdmin, updateRedditAccount);
+router.put("/:id", protect, updateRedditAccount);
 router.patch("/:id/toggle", protect, toggleRedditStatus);
-router.delete("/:id", protect, isAdmin, deleteRedditAccount);
+router.delete("/:id", protect, deleteRedditAccount);
 module.exports = router;

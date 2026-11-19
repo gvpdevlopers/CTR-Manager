@@ -15,10 +15,10 @@ const protect = async (req, res, next) => {
 
     const user = await User.findById(decoded.id).select("-passwordHash");
 
-    if (!user) {
+    if (!user || user.isActive === false || (decoded.tokenVersion || 0) !== (user.tokenVersion || 0)) {
       return res
         .status(401)
-        .json({ message: "Not authorized, user not found" });
+        .json({ message: "Not authorized, user unavailable" });
     }
 
     req.user = user;

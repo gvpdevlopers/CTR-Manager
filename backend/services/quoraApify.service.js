@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { recordActorRun, recordActorStartIntent, getRecoveryActor } = require("./verificationRun.service");
 
 const APIFY_BASE_URL = "https://api.apify.com/v2";
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
@@ -15,14 +16,15 @@ async function fetchQuoraProfileData(profileUrl) {
   if (!profileUrl) throw new Error("profileUrl is required");
 
   try {
-    const runResponse = await axios.post(
+    const recoveredId = getRecoveryActor(profileUrl);
+    if (!recoveredId) await recordActorStartIntent(profileUrl);
+    const runResponse = recoveredId ? null : await axios.post(
       `${APIFY_BASE_URL}/acts/${ACTOR_ID}/runs`,
       {
-        headless: false,
+        headless: true,
         launcher: "chromium",
-        useChrome: true,
-        stealth: true,
         maxRequestsPerCrawl: 1,
+        maxConcurrency: 1,
 
         pageFunction: `
 async function pageFunction({ page, request, log }) {
@@ -34,15 +36,15 @@ async function pageFunction({ page, request, log }) {
 
     const extract = (regex) => {
       const match = text.match(regex);
-      return match ? Number(match[1]) : 0;
+      return match ? Number(match[1].replace(/,/g, "")) : null;
     };
 
     return {
       url: location.href,
       title: document.title,
-      answers: extract(/(\\d+)\\s*answers?/i),
-      questions: extract(/(\\d+)\\s*questions?/i),
-      following: extract(/(\\d+)\\s*following/i),
+      answers: extract(/([\\d,]+)\\s*answers?/i),
+      questions: extract(/([\\d,]+)\\s*questions?/i),
+      following: extract(/([\\d,]+)\\s*following/i),
     };
   });
 
@@ -55,14 +57,15 @@ async function pageFunction({ page, request, log }) {
         },
         startUrls: [{ url: profileUrl }],
         waitUntil: "domcontentloaded",
-        pageLoadTimeoutSecs: 90,
-        maxRequestRetries: 2,
+        pageLoadTimeoutSecs: 45,
+        maxRequestRetries: 0,
       },
-      { params: { token: APIFY_TOKEN } }
+      { headers: { Authorization: `Bearer ${APIFY_TOKEN}` }, params: { memory: 1024, timeout: 90, maxTotalChargeUsd: 0.05 }, timeout: 15000 }
     );
 
-    const runId = runResponse.data?.data?.id;
+    const runId = recoveredId || runResponse.data?.data?.id;
     if (!runId) throw new Error("Failed to start Apify run");
+    await recordActorRun(runId, "RUNNING", null, profileUrl);
 
     let runStatus = "RUNNING";
     let runData = null;
@@ -72,27 +75,28 @@ async function pageFunction({ page, request, log }) {
 
       const statusRes = await axios.get(
         `${APIFY_BASE_URL}/actor-runs/${runId}`,
-        { params: { token: APIFY_TOKEN } }
+        { headers: { Authorization: `Bearer ${APIFY_TOKEN}` }, timeout: 15000 }
       );
 
       runStatus = statusRes.data?.data?.status;
       runData = statusRes.data?.data;
 
-      if (["FAILED", "ABORTED"].includes(runStatus)) {
+      if (["FAILED", "ABORTED", "TIMED-OUT"].includes(runStatus)) {
+        await recordActorRun(runId, runStatus, runData?.usageTotalUsd ?? null, null, runData?.finishedAt);
         throw new Error(`Apify run ${runStatus}`);
       }
     }
 
+    await recordActorRun(runId, runStatus, runData?.usageTotalUsd ?? null, null, runData?.finishedAt);
     const datasetId = runData?.defaultDatasetId;
     if (!datasetId) throw new Error("No dataset found");
 
     const datasetRes = await axios.get(
       `${APIFY_BASE_URL}/datasets/${datasetId}/items`,
-      { params: { token: APIFY_TOKEN } }
+      { headers: { Authorization: `Bearer ${APIFY_TOKEN}` }, timeout: 15000 }
     );
 
     const items = datasetRes.data || [];
-    console.log("📦 Apify raw dataset:", JSON.stringify(items, null, 2));
 
     if (!items.length || items[0]["#error"]) {
       throw new Error("Apify blocked or returned error dataset");
@@ -100,9 +104,10 @@ async function pageFunction({ page, request, log }) {
 
     const profile = items[0];
 
-    const following = Number(profile.following || 0);
-    const answers = Number(profile.answers || 0);
-    const questions = Number(profile.questions || 0);
+    const { following, answers, questions } = profile;
+    if (![following, answers, questions].every(value => Number.isSafeInteger(value) && value >= 0)) {
+      throw new Error("Public profile data is missing required metrics");
+    }
 
     console.log("📊 Parsed Quora metrics:", { following, answers, questions });
 

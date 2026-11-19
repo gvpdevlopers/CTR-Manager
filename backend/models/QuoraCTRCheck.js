@@ -95,7 +95,7 @@ const quoraCTRCheckSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "done", "not_done", "suspicious"],
+      enum: ["pending", "done", "not_done", "suspicious", "unavailable"],
       default: "pending",
     },
 
@@ -104,6 +104,7 @@ const quoraCTRCheckSchema = new mongoose.Schema(
     ====================== */
 
     metadata: {
+      attemptedAt: { type: Date, default: null },
       apifyRunId: {
         type: String,
         default: null,

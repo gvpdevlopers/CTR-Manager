@@ -1,40 +1,41 @@
-process.env.TZ = "Asia/Kolkata";
+const { businessDate, claimDateRange, BUSINESS_TIMEZONE } = require("../utils/businessDate");
 
 const cron = require("node-cron");
+const { startRun, getRecoveryTarget, getRecoveryObservedAt } = require("../services/verificationRun.service");
 const TaskExecution = require("../models/TaskExecution");
 const InstagramCTRCheck = require("../models/InstagramCTRCheck");
 const { fetchInstagramProfile } = require("../services/instagramApify.service");
+const { shouldVerify } = require("../services/verificationEligibility");
 
 /* =========================
    DATE HELPERS
 ========================= */
 function getTodayDate() {
-  return new Date().toISOString().slice(0, 10);
+  return businessDate();
 }
 
 const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-async function runInstagramCTRVerification({ manual = false } = {}) {
+async function runInstagramCTRVerification({ manual = false, businessDay = null, recoveryOnly = false } = {}) {
   console.log(
     manual
       ? "🟦 Manual Instagram CTR Verification Started"
       : "⏳ Instagram CTR Verification Started"
   );
 
-  const todayStr = getTodayDate();
-  const now = new Date();
+  const todayStr = businessDay || getTodayDate();
+  let now = new Date();
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
+  const { start, end } = claimDateRange(todayStr);
 
   const executions = await TaskExecution.find({
     platform: "instagram",
-    taskDate: { $gte: start, $lte: end },
+    taskId: "daily_ctr",
+    taskDate: { $gte: start, $lt: end },
   }).populate({ path: "accountId", select: "username userName handle" });
+  const recoveryTarget = getRecoveryTarget();
+  if (recoveryTarget) executions.sort((a, b) => Number((b.accountId?.username || b.accountId?.userName || b.accountId?.handle || "").trim().toLowerCase() === recoveryTarget) - Number((a.accountId?.username || a.accountId?.userName || a.accountId?.handle || "").trim().toLowerCase() === recoveryTarget));
 
   if (executions.length === 0) {
     console.log("⚠️ No TaskExecution found — verification exit");
@@ -50,13 +51,34 @@ async function runInstagramCTRVerification({ manual = false } = {}) {
     const username =
       account.username || account.userName || account.handle || "";
     if (!username.trim()) continue;
+    if (recoveryOnly && username.trim().toLowerCase() !== recoveryTarget) continue;
+
+    const existing = await InstagramCTRCheck.findOne({ instagramAccountId: account._id, date: todayStr });
+    if (!shouldVerify(existing, now)) continue;
 
     const employeeSubmittedAt = exec.createdAt || null;
 
     console.log("➡️ Verifying:", username);
 
-    const data = await fetchInstagramProfile(username);
-    if (!data) continue;
+    let data;
+    try {
+      data = await fetchInstagramProfile(username);
+      now = getRecoveryObservedAt(username.trim().toLowerCase()) || now;
+      if (!data) throw new Error("No profile data returned");
+      if (![data.followersCount, data.followsCount, data.postsCount].every(value => Number.isSafeInteger(value) && value >= 0) ||
+          !Array.isArray(data.latestPosts) ||
+          data.latestPosts.some(post => !post || !Number.isFinite(Date.parse(post.timestamp || post.taken_at)))) {
+        throw new Error("Public profile data is missing required metrics or post dates");
+      }
+    } catch (error) {
+      await InstagramCTRCheck.updateOne(
+        { instagramAccountId: account._id, date: todayStr },
+        { $set: { instagramAccountId: account._id, username, employeeId: exec.employeeId, employeeSubmittedAt, date: todayStr, status: "unavailable", failureReasons: ["Public profile data unavailable or incomplete"], verifiedAt: null, lastAttemptAt: new Date() }, $unset: { snapshot: "", deltas: "" } },
+        { upsert: true }
+      );
+      console.error("Instagram profile unavailable:", username, error.message);
+      continue;
+    }
 
     /* ---------- EXTRACT POSTS (STEP B) ---------- */
     const currentPosts = (data.latestPosts || []).map(p => ({
@@ -68,13 +90,15 @@ async function runInstagramCTRVerification({ manual = false } = {}) {
     let baseline = await InstagramCTRCheck.findOne({
       instagramAccountId: account._id,
       date: { $lt: todayStr },
+      status: { $ne: "unavailable" },
+      "snapshot.following": { $type: "number", $gte: 0 },
     }).sort({ date: -1 });
 
     if (!baseline) {
       await InstagramCTRCheck.updateOne(
         { instagramAccountId: account._id, date: todayStr },
         {
-          $setOnInsert: {
+          $set: {
             instagramAccountId: account._id,
             username,
             employeeId: exec.employeeId?._id,
@@ -86,8 +110,8 @@ async function runInstagramCTRVerification({ manual = false } = {}) {
               postMeta: currentPosts,
             },
             deltas: { following: 0, posts: 0 },
-            status: "not_done",
-            failureReasons: ["Baseline created"],
+            status: "pending",
+            failureReasons: ["Baseline created; awaiting the next check"],
             verifiedAt: now,
           },
         },
@@ -184,15 +208,17 @@ const postValid = mergedPosts.some(
 /* =========================
    DAILY CRON
 ========================= */
-cron.schedule("0 1 * * *", async () => {
-  try {
-    await runInstagramCTRVerification();
-  } catch (err) {
-    console.error("❌ Instagram CTR Verification Failed:", err);
-  }
-});
+function startInstagramCTRCron() {
+  return cron.schedule("0 23 * * *", async () => {
+    try {
+      if (!(await startRun("instagram", () => runInstagramCTRVerification()))) {
+        console.log("Instagram verification already running; scheduled run skipped");
+      }
+    } catch (error) { console.error("Could not start scheduled Instagram verification:", error.message); }
+  }, { timezone: BUSINESS_TIMEZONE });
+}
 
-module.exports = { runInstagramCTRVerification };
+module.exports = { runInstagramCTRVerification, startInstagramCTRCron };
 
 
 
@@ -401,4 +427,4 @@ module.exports = { runInstagramCTRVerification };
 
 
 
-module.exports = { runInstagramCTRVerification };
+module.exports = { runInstagramCTRVerification, startInstagramCTRCron };

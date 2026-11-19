@@ -14,13 +14,15 @@ export default function MyAccounts() {
       const res = await API.get("/platform-accounts/me");
       setAccounts(res.data.filter((account) => isVisiblePlatform(account.platform)));
       setLoading(false);
-    } catch (err) {
+    } catch {
       alert("Failed to load accounts");
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Initial data load is intentionally started when this view mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAccounts();
   }, []);
 
@@ -31,7 +33,7 @@ export default function MyAccounts() {
         status: newStatus,
       });
       fetchAccounts();
-    } catch (err) {
+    } catch {
       alert("Status update failed");
     }
   };
@@ -41,7 +43,7 @@ export default function MyAccounts() {
     try {
       await API.delete(`/platform-accounts/me/${id}`);
       fetchAccounts();
-    } catch (err) {
+    } catch {
       alert("Delete failed");
     }
   };

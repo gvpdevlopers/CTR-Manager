@@ -20,8 +20,8 @@ router.get("/", protect, getAllInstagramAccounts);
 router.post("/", protect, createInstagramAccount);
 
 // ADMIN ONLY
-router.delete("/:id", protect, isAdmin, deleteInstagramAccount);
+router.delete("/:id", protect, deleteInstagramAccount);
 router.patch("/:id/toggle", protect, toggleInstagramStatus);
-router.put("/:id", protect, isAdmin, updateInstagramAccount);
+router.put("/:id", protect, updateInstagramAccount);
 
 module.exports = router;

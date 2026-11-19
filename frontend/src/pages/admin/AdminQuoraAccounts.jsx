@@ -1,3 +1,5 @@
+import ConfirmDialog from "../../components/ConfirmDialog";
+import StatusSelect from "../../components/StatusSelect";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 
@@ -27,6 +29,10 @@ export default function AdminQuoraAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [capturing, setCapturing] = useState({});
+  const [savingProfile, setSavingProfile] = useState({});
+  const [baselineMessages, setBaselineMessages] = useState({});
 
   /* ================= FETCH ================= */
   const fetchAccounts = async () => {
@@ -46,14 +52,47 @@ export default function AdminQuoraAccounts() {
   }, []);
 
   /* ================= ACTIONS ================= */
-  const updateField = async (id, field, value) => {
+  const captureBaseline = async (account) => {
+    if (capturing[account._id] || !account.profileUrl) return;
+    setCapturing((current) => ({ ...current, [account._id]: true }));
+    setBaselineMessages((current) => ({ ...current, [account._id]: null }));
     try {
-      await API.put(`/quora-accounts/${id}`, { [field]: value });
-      setAccounts((prev) =>
-        prev.map((a) => (a._id === id ? { ...a, [field]: value } : a))
-      );
-    } catch {
-      alert("Update failed");
+      const { data } = await API.post(`/admin/quora-accounts/${account._id}/capture-baseline`, null, { timeout: 180000 });
+      if (!data.success) throw new Error(data.message || "Baseline capture failed.");
+      setBaselineMessages((current) => ({ ...current, [account._id]: { type: "success", text: data.message } }));
+      await fetchAccounts();
+    } catch (error) {
+      const text = error.code === "ECONNABORTED"
+        ? "The request timed out; the capture may still finish. Refresh the account list before retrying."
+        : error.response?.data?.message || error.message || "Baseline capture failed.";
+      setBaselineMessages((current) => ({ ...current, [account._id]: { type: "error", text } }));
+    } finally {
+      setCapturing((current) => ({ ...current, [account._id]: false }));
+    }
+  };
+
+  const changeProfileAndReset = async (account) => {
+    const profileUrl = window.prompt("Enter the correct public Quora profile URL:", account.profileUrl || "");
+    if (!profileUrl || profileUrl === account.profileUrl) return;
+    if (!window.confirm("Changing this profile clears its current baseline. A new baseline will need to be captured. Continue?")) return;
+    try {
+      await API.put(`/quora-accounts/${account._id}`, { profileUrl, resetBaseline: true });
+      await fetchAccounts();
+    } catch (error) {
+      setBaselineMessages((current) => ({ ...current, [account._id]: { type: "error", text: error.response?.data?.message || "Unable to change profile." } }));
+    }
+  };
+
+  const updateField = async (id, field, value) => {
+    if (field === "profileUrl") setSavingProfile((current) => ({ ...current, [id]: true }));
+    try {
+      const { data } = await API.put(`/quora-accounts/${id}`, { [field]: value });
+      setAccounts((prev) => prev.map((a) => (a._id === id ? data : a)));
+    } catch (error) {
+      alert(error.response?.data?.message || "Update failed");
+      await fetchAccounts();
+    } finally {
+      if (field === "profileUrl") setSavingProfile((current) => ({ ...current, [id]: false }));
     }
   };
 
@@ -67,7 +106,6 @@ export default function AdminQuoraAccounts() {
   };
 
   const deleteAccount = async (id) => {
-    if (!confirm("Delete this Quora account?")) return;
     try {
       await API.delete(`/quora-accounts/${id}`);
       fetchAccounts();
@@ -113,7 +151,8 @@ export default function AdminQuoraAccounts() {
 
   /* ================= UI ================= */
   return (
-    <div className="space-y-5">
+    <div className="account-sheet-page space-y-5">
+      {deleteId && <ConfirmDialog title="Delete account?" description="This account will be removed. This action cannot be undone." onClose={() => setDeleteId(null)} onConfirm={() => deleteAccount(deleteId)} />}
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -169,6 +208,8 @@ export default function AdminQuoraAccounts() {
               <th>Name 2</th>
               <th>Email 2</th>
               <th>Pass 2</th>
+              <th>Public profile</th>
+              <th>Baseline</th>
               <th>Status</th>
               <th className="text-right pr-2">Actions</th>
             </tr>
@@ -177,13 +218,13 @@ export default function AdminQuoraAccounts() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="10" className="py-6 text-center text-gray-400">
+                <td colSpan="12" className="py-6 text-center text-gray-400">
                   Loading...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan="10" className="py-6 text-center text-gray-400">
+                <td colSpan="12" className="py-6 text-center text-gray-400">
                   No Quora accounts found
                 </td>
               </tr>
@@ -275,8 +316,21 @@ export default function AdminQuoraAccounts() {
                     />
                   </td>
 
+                  <td className="py-2 text-gray-700 dark:text-gray-200">
+                    <input key={`${acc._id}-${acc.profileUrl || "empty"}`} defaultValue={acc.profileUrl || ""} placeholder="https://www.quora.com/profile/..." aria-label={`Public profile URL for ${acc.userId}`} onBlur={(event) => { if (event.target.value !== (acc.profileUrl || "")) updateField(acc._id, "profileUrl", event.target.value); }} className={inputInline} />
+                  </td>
+                  <td className="py-2 text-gray-700 dark:text-gray-200">
+                    <span>{acc.baselineCapturedAt ? `Captured ${new Date(acc.baselineCapturedAt).toLocaleString()}` : "Not captured"}</span>
+                    {acc.baselineCapturedAt && <button type="button" onClick={() => changeProfileAndReset(acc)} className={`${actionBtn} ml-2 border-gray-300 dark:border-gray-600`}>Change profile &amp; reset</button>}
+                    {!acc.baselineCapturedAt && <button type="button" onClick={() => captureBaseline(acc)} disabled={capturing[acc._id] || savingProfile[acc._id] || !acc.profileUrl} className={`${actionBtn} ml-2 border-gray-300 dark:border-gray-600`}>
+                      {capturing[acc._id] ? "Capturing..." : "Capture baseline"}
+                    </button>}
+                    {!acc.profileUrl && <p className="mt-1">A public profile URL is required.</p>}
+                    {baselineMessages[acc._id] && <p role={baselineMessages[acc._id].type === "error" ? "alert" : "status"} className="mt-1">{baselineMessages[acc._id].text}</p>}
+                  </td>
                   <td className="py-2">
-                    <select
+                    <StatusSelect
+                      aria-label={`Status for ${acc.username || acc.userId || acc.name1 || "account"}`}
                       value={acc.status}
                       onChange={(e) => changeStatus(acc._id, e.target.value)}
                       className={selectStatus}
@@ -284,12 +338,12 @@ export default function AdminQuoraAccounts() {
                       <option value="working">Working</option>
                       <option value="suspicious">Suspicious</option>
                       <option value="not_working">Not Working</option>
-                    </select>
+                    </StatusSelect>
                   </td>
 
                   <td className="py-2 text-right pr-2">
                     <button
-                      onClick={() => deleteAccount(acc._id)}
+                      onClick={() => setDeleteId(acc._id)}
                       className={`${actionBtn} border-red-600 text-red-600 dark:text-red-400`}
                     >
                       Delete

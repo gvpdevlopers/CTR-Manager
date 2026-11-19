@@ -62,6 +62,7 @@ exports.updateEmployeeStatus = async (req, res) => {
     }
 
     employee.isActive = !employee.isActive;
+    employee.tokenVersion = (employee.tokenVersion || 0) + 1;
     await employee.save();
 
     res.json({
@@ -79,6 +80,9 @@ exports.resetEmployeePassword = async (req, res) => {
   try {
     const { id } = req.params;
     const { newPassword } = req.body;
+    if (typeof newPassword !== "string" || !newPassword.trim()) {
+      return res.status(400).json({ message: "A new password is required" });
+    }
 
     const employee = await User.findById(id);
     if (!employee || employee.role !== "employee") {
@@ -87,6 +91,7 @@ exports.resetEmployeePassword = async (req, res) => {
 
     const newHashed = await hashPassword(newPassword);
     employee.passwordHash = newHashed;
+    employee.tokenVersion = (employee.tokenVersion || 0) + 1;
     await employee.save();
 
     res.json({ message: "Employee password reset successfully" });

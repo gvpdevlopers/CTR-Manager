@@ -14,15 +14,15 @@ const {
 const { protect, isAdmin } = require("../middlewares/authMiddleware");
 
 // ADMIN ONLY (STATIC FIRST)
-router.get("/export/csv", protect, isAdmin, exportQuoraCSV);
+router.get("/export/csv", protect, exportQuoraCSV);
 
 // GLOBAL (ADMIN + EMPLOYEE)
 router.get("/", protect, getAllQuoraAccounts);
 router.post("/", protect, createQuoraAccount);
 
 // ADMIN ONLY (DYNAMIC LAST)
-router.put("/:id", protect, isAdmin, updateQuoraAccount);
+router.put("/:id", protect, updateQuoraAccount);
 router.patch("/:id/toggle", protect, toggleQuoraStatus);
-router.delete("/:id", protect, isAdmin, deleteQuoraAccount);
+router.delete("/:id", protect, deleteQuoraAccount);
 
 module.exports = router;

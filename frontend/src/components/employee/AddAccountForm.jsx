@@ -1,3 +1,4 @@
+import StatusSelect from "../StatusSelect";
 import { BHW_ENABLED } from "../../config/platforms";
 import { useState } from "react";
 import API from "../../services/api";
@@ -24,7 +25,7 @@ export default function AddAccountForm({ refresh }) {
       setProfileLink("");
       setDevPass("");
       refresh();
-    } catch (err) {
+    } catch {
       alert("Failed to add account");
     }
   };
@@ -39,7 +40,8 @@ export default function AddAccountForm({ refresh }) {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-5 gap-3"
       >
-        <select
+        <StatusSelect
+          aria-label="Platform"
           value={platform}
           onChange={(e) => setPlatform(e.target.value)}
           className="p-2 border rounded"
@@ -48,7 +50,7 @@ export default function AddAccountForm({ refresh }) {
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
           {BHW_ENABLED && <option value="bhw">BHW</option>}
-        </select>
+        </StatusSelect>
 
         <input
           placeholder="Username"

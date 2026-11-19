@@ -1,10 +1,16 @@
 const TaskExecution = require("../models/TaskExecution");
 const PlatformTask = require("../models/PlatformTask");
+const { markSharedClaim } = require("../services/dailyClaim.service");
 
 exports.markTaskDone = async (req, res) => {
   try {
     const { accountId, platform = "instagram" } = req.body;
     const employeeId = req.user._id;
+    if (["instagram", "quora"].includes(platform)) {
+      const claim = await markSharedClaim({ accountId, platform, employeeId });
+      return res.json({ success: true, markedBy: claim.employeeId });
+    }
+
 
     const taskDate = new Date();
     taskDate.setHours(0, 0, 0, 0);
@@ -31,7 +37,7 @@ exports.markTaskDone = async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     console.error("❌ MARK DONE ERROR:", err);
-    return res.status(500).json({ message: "Failed to mark CTR" });
+    return res.status(err.status || 500).json({ message: err.status ? err.message : "Failed to mark CTR" });
   }
 };
 

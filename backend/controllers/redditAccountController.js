@@ -54,12 +54,14 @@ exports.getAllRedditAccounts = async (req, res) => {
 // ✅ EMPLOYEE / ADMIN — INLINE UPDATE
 exports.updateRedditAccount = async (req, res) => {
   try {
+    const fields = ["userId", "name1", "email1", "password1", "name2", "email2", "password2", "status"];
+    const updates = req.user?.role === "employee" ? Object.fromEntries(Object.entries(req.body).filter(([key]) => fields.includes(key))) : req.body;
     const updated = await RedditAccount.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true }
+      updates,
+      { new: true, runValidators: true }
     );
-
+    if (!updated) return res.status(404).json({ message: "Account not found" });
     res.json(updated);
   } catch {
     res.status(500).json({ message: "Update failed" });
@@ -69,8 +71,11 @@ exports.updateRedditAccount = async (req, res) => {
 // ✅ TOGGLE STATUS
 exports.toggleRedditStatus = async (req, res) => {
   try {
+    const { status } = req.body;
+    if (!["working", "suspicious", "not_working"].includes(status)) return res.status(400).json({ message: "Invalid account status" });
     const acc = await RedditAccount.findById(req.params.id);
-    acc.status = acc.status === "working" ? "not_working" : "working";
+    if (!acc) return res.status(404).json({ message: "Account not found" });
+    acc.status = status;
     await acc.save();
 
     res.json(acc);

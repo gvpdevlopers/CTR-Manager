@@ -34,6 +34,7 @@ const redditRoutes = require("./routes/reddit.routes");
 const { startRedditCTRCron } = require("./cron/redditCTR.cron");
 const { startQuoraCTRCron } = require("./cron/quoraCTR.cron");
 const { startInstagramCTRCron } = require("./cron/instagramCTR.cron");
+const { startVerificationRecovery } = require("./services/verificationRecovery.service");
 
 const app = express();
 
@@ -41,7 +42,11 @@ const app = express();
 connectDB();
 
 // ===== Middlewares =====
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map(value => value.trim()).filter(Boolean);
+if (process.env.APP_ENV === "production" && allowedOrigins.length === 0) {
+  throw new Error("CORS_ORIGINS must be configured in production");
+}
+app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : undefined));
 app.use(express.json());
 
 // ===== Routes Registration =====
@@ -80,10 +85,10 @@ app.get("/", (req, res) => {
   res.send("CTR Monitor Backend Running ");
 });
 
-// Reddit CTR verification is paused; restore this call when it resumes.
-// startRedditCTRCron();
+startRedditCTRCron();
 startQuoraCTRCron();
-// startInstagramCTRCron();
+startInstagramCTRCron();
+startVerificationRecovery();
 // startBHWCTRCron();
 
 module.exports = app;

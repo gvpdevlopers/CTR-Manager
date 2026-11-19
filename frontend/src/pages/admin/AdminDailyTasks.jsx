@@ -1,3 +1,4 @@
+import StatusSelect from "../../components/StatusSelect";
 import { BHW_ENABLED, isVisiblePlatform } from "../../config/platforms";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
@@ -189,7 +190,8 @@ export default function AdminDailyTasks() {
             className={`flex-1 ${inputClass}`}
           />
 
-          <select
+          <StatusSelect
+            aria-label="Platform"
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
             className={selectClass}
@@ -198,7 +200,7 @@ export default function AdminDailyTasks() {
             <option value="reddit">Reddit</option>
             <option value="quora">Quora</option>
             {BHW_ENABLED && <option value="bhw">BHW</option>}
-          </select>
+          </StatusSelect>
 
           <button
             onClick={addSingleTask}
@@ -245,7 +247,8 @@ Comment on 5 reels`}
         <span className="text-gray-900 dark:text-white font-medium">
           Filter:
         </span>
-        <select
+        <StatusSelect
+          aria-label="Platform filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className={selectClass}
@@ -255,7 +258,7 @@ Comment on 5 reels`}
           <option value="reddit">Reddit</option>
           <option value="quora">Quora</option>
           {BHW_ENABLED && <option value="bhw">BHW</option>}
-        </select>
+        </StatusSelect>
       </div>
 
       {/* TASK LIST */}

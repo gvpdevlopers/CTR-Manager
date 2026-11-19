@@ -227,3 +227,69 @@
  .login-form-panel { padding:30px; }
  .login-intro h1 { font-size:clamp(38px,4vw,52px); }
 }
+
+/* Account sheets */
+.account-sheet-page { color:var(--ink); }
+.account-sheet-page > h2, .account-sheet-page > div:first-child h2 { font-size:25px; letter-spacing:-.035em; font-weight:700; }
+.account-sheet-page > .grid { gap:12px; }
+.account-sheet-page > .grid > div { min-height:64px; display:flex; align-items:center; padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:0 2px 8px rgb(15 23 42 / .025); font-size:13px; font-weight:600; }
+.account-sheet-page > [class*="overflow-x-auto"] { overflow:auto; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:0 3px 18px rgb(15 23 42 / .035); }
+.account-sheet-page table { width:100%; min-width:1000px; border-collapse:separate; border-spacing:0; }
+.account-sheet-page th { text-align:left; background:var(--canvas); padding:13px 14px; font-size:10px; white-space:nowrap; letter-spacing:.08em; color:var(--muted); }
+.account-sheet-page td { padding:10px 12px; border-top:1px solid var(--line); font-size:13px; line-height:1.45; vertical-align:middle; overflow-wrap:normal; }
+.account-sheet-page tbody tr:hover { background:var(--canvas); }
+.account-sheet-page td input:not([type=checkbox]) { min-width:130px; max-width:250px; min-height:36px; padding:7px 9px; border:1px solid transparent; border-radius:7px; background:transparent; font-size:13px; }
+.account-sheet-page td input:not([type=checkbox]):hover { border-color:var(--line); }
+.account-sheet-page td input:not([type=checkbox]):focus { background:var(--surface); border-color:#9aa8b8; }
+.account-sheet-page td input[type=checkbox] { width:17px; height:17px; cursor:pointer; accent-color:#4d7b68; }
+.account-sheet-page td button:not(.status-select) { white-space:nowrap; }
+.account-sheet-page td:last-child { min-width:100px; }
+.status-select { display:inline-flex; align-items:center; gap:8px; min-height:36px; min-width:135px; padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-size:12px; font-weight:600; white-space:nowrap; }
+.status-select svg { margin-left:auto; color:var(--muted); }
+.status-select:hover { border-color:#a8b2be; }
+.status-select-dot,.status-option-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#9aa3af; flex:none; }
+.status-working .status-select-dot,.status-option-dot.status-working { background:#4ba27d; }
+.status-suspicious .status-select-dot,.status-option-dot.status-suspicious { background:#d3a34e; }
+.status-not_working .status-select-dot,.status-option-dot.status-not_working { background:#cb7771; }
+.status-menu { position:fixed; z-index:1000; display:grid; gap:3px; padding:5px; background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:10px; box-shadow:0 12px 32px rgb(15 23 42 / .16); }
+.status-menu button { display:flex; align-items:center; gap:9px; width:100%; border:0; border-radius:6px; background:transparent; color:var(--ink); text-align:left; padding:9px 10px; font-size:12px; }
+.status-menu button:hover,.status-menu button:focus-visible { background:var(--canvas); }
+.status-menu button svg { margin-left:auto; }
+.reset-dialog { width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; margin:auto; border:1px solid var(--line); border-radius:18px; padding:26px; color:var(--ink); background:var(--surface); box-shadow:0 24px 70px rgb(0 0 0 / .25); }
+.reset-dialog::backdrop { background:rgb(15 23 42 / .48); backdrop-filter:blur(3px); }
+.reset-dialog-header { display:flex; justify-content:space-between; align-items:center; }
+.reset-dialog-icon { display:grid; place-items:center; width:42px; height:42px; border-radius:11px; background:var(--canvas); color:#62728a; }
+.reset-dialog h2 { font-size:22px; font-weight:700; margin:20px 0 6px; }
+.reset-dialog p { font-size:13px; color:var(--muted); line-height:1.6; }
+.reset-dialog label { display:block; font-size:12px; font-weight:700; margin:24px 0 8px; }
+.reset-password-field { position:relative; }
+.reset-password-field input { width:100%; min-height:44px; padding:10px 44px 10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--canvas); color:var(--ink); }
+.reset-password-field button { position:absolute; right:3px; top:3px; width:38px; height:38px; border:0; background:transparent; color:var(--muted); display:grid; place-items:center; }
+.reset-dialog .reset-error { color:#b4534c; }
+.reset-dialog-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:24px; }
+.reset-dialog-actions button { padding:10px 15px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:13px; font-weight:600; }
+.reset-dialog-actions button[type=submit] { background:#334155; border-color:#334155; color:#fff; }
+@media(max-width:767px) { .account-sheet-page > .grid > div { min-height:54px; padding:12px; } .account-sheet-page table { min-width:900px; } }
+
+/* Shared custom select, used for platform, filter and account controls. */
+.custom-select-wrap { display:inline-block; min-width:0; vertical-align:middle; }
+.custom-select-wrap .status-select { width:100%; min-height:40px; }
+.custom-select-value { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.status-menu { max-height:min(240px, calc(100dvh - 16px)); overflow-y:auto; overscroll-behavior:contain; }
+.status-menu button[aria-selected="true"] { font-weight:700; }
+.status-menu button:disabled { opacity:.5; cursor:not-allowed; }
+
+.employee-account-refresh, .employee-account-actions button { display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-size:12px; font-weight:600; }
+.employee-account-refresh:hover, .employee-account-actions button:hover { background:var(--canvas); }
+.employee-account-actions { display:flex; gap:6px; }
+.employee-account-actions .employee-account-delete { color:#bd4545; }
+.employee-account-dialog { width:min(620px,calc(100vw - 32px)); }
+.employee-account-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; }
+.employee-account-fields label { margin:0; }
+.employee-account-fields input { display:block; width:100%; margin-top:6px; padding:10px; border:1px solid var(--line); border-radius:8px; background:var(--canvas); color:var(--ink); font-size:13px; }
+.employee-account-dialog .employee-baseline-confirm { display:flex; align-items:flex-start; gap:8px; font-weight:500; line-height:1.5; }
+.employee-baseline-confirm input { margin-top:3px; flex:none; }
+@media(max-width:520px) { .employee-account-fields { grid-template-columns:1fr; } }
+
+.employee-account-link { color:var(--ink); text-decoration:underline; text-underline-offset:2px; overflow-wrap:anywhere; }
+.employee-account-dialog .reset-error { display:block; margin-top:4px; color:#b4534c; }

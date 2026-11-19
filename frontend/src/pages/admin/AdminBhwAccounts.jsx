@@ -1,3 +1,4 @@
+import StatusSelect from "../../components/StatusSelect";
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 
@@ -245,7 +246,8 @@ export default function AdminBhwAccounts() {
                   </td>
 
                   <td className="py-2 px-3 text-center">
-                    <select
+                    <StatusSelect
+                      aria-label={`Status for ${acc.username || acc.userId || acc.name1 || "account"}`}
                       value={acc.status}
                       onChange={(e) => changeStatus(acc._id, e.target.value)}
                       className={statusSelect}
@@ -253,7 +255,7 @@ export default function AdminBhwAccounts() {
                       <option value="working">Working</option>
                       <option value="suspicious">Suspicious</option>
                       <option value="not_working">Not Working</option>
-                    </select>
+                    </StatusSelect>
                   </td>
 
                   <td className="py-2 px-3 text-center">
